@@ -96,14 +96,14 @@ class Game:
         else:
             self._available_colours = set(
                 [
-                    colours.BLACK,
-                    colours.BLUE,
-                    colours.GREEN,
-                    colours.ORANGE,
-                    colours.PINK,
-                    colours.PURPLE,
-                    colours.RED,
-                    colours.YELLOW,
+                    colours.PLAYER_BLACK,
+                    colours.PLAYER_BLUE,
+                    colours.PLAYER_GREEN,
+                    colours.PLAYER_ORANGE,
+                    colours.PLAYER_PINK,
+                    colours.PLAYER_PURPLE,
+                    colours.PLAYER_RED,
+                    colours.PLAYER_YELLOW,
                 ]
             )
         self._ordered_players = None
@@ -113,7 +113,7 @@ class Game:
         if num > 6:
             print("Too many players")
             return None
-        player = Player(num, f"Player {num}", colours.BLANK)
+        player = Player(num, f"Player {num}", colours.PLAYER_BLANK)
         player.set_game(self)
         self._players.append(player)
 
@@ -148,7 +148,7 @@ class Game:
     def _start_phase_strategy(self):
         self._turn += 1
         self._phase = Game.PHASE_STRATEGY
-        for strategy in Strategies.ALL - self._available_strategies.keys():
+        for strategy in Strategies.ALL - set(self._available_strategies.keys()):
             self._available_strategies[strategy] = 0
 
     def _end_phase_strategy(self):
@@ -288,31 +288,31 @@ def main():
 
     player = game.get_player(5)
     player.name = "Florent"
-    player.colour = colours.RED
+    player.colour = colours.PLAYER_RED
 
     player = game.get_player(2)
     player.name = "Pierre"
     try:
-        player.colour = colours.RED
+        player.colour = colours.PLAYER_RED
     except Exception as e:
         print("Red already taken:", e)
-    player.colour = colours.BLACK
+    player.colour = colours.PLAYER_BLACK
 
     player = game.get_player(4)
     player.name = "Shizu"
-    player.colour = colours.GREEN
+    player.colour = colours.PLAYER_GREEN
 
     player = game.get_player(6)
     player.name = "Julie"
-    player.colour = colours.ORANGE
+    player.colour = colours.PLAYER_ORANGE
 
     player = game.get_player(1)
     player.name = "Michael"
-    player.colour = colours.PURPLE
+    player.colour = colours.PLAYER_PURPLE
 
     player = game.get_player(3)
     player.name = "Romain"
-    player.colour = colours.BLUE
+    player.colour = colours.PLAYER_BLUE
 
     game.set_speaker(3)
 

@@ -1,3 +1,7 @@
+class FONTS:
+    DejaVu18 = 3
+
+
 class Rectangle:
     def __init__(self, x, y, dx, dy, border_colour, fill_colour):
         self.x = x
@@ -49,9 +53,7 @@ class Circle:
 
 
 class Title:
-    def __init__(
-        self, text, x_text, text_colour, fill_colour, font=Widgets.FONTS.DejaVu18
-    ):
+    def __init__(self, text, x_text, text_colour, fill_colour, font=FONTS.DejaVu18):
         self.text = text
         self.x_text = x_text
         self.text_colour = text_colour
@@ -129,7 +131,7 @@ class Label:
         size,
         text_colour,
         backgroud_colour,
-        font,  # =Widgets.FONTS.DejaVu18
+        font,  # =FONTS.DejaVu18
     ):
         self.text = text
         self.x = x

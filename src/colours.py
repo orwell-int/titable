@@ -33,7 +33,7 @@ class Colour:
         else:
             return pow(((v + 0.055) / 1.055), 2.4)
 
-    def percieved_lightness(self):
+    def get_percieved_lightness(self):
         r_lin = self._linearize(self.r)
         g_lin = self._linearize(self.g)
         b_lin = self._linearize(self.b)
@@ -43,6 +43,12 @@ class Colour:
         else:
             percieved_lightness = pow(luminance, 1 / 3) * 116 - 16
         return percieved_lightness
+
+    def get_contrasting_text(self):
+        if self.get_percieved_lightness() < 0.5:
+            return Colour(255, 255, 255)
+        else:
+            return Colour(0, 0, 0)
 
     @property
     def hexa(self):
@@ -69,22 +75,26 @@ class Colour:
         return (self.r << 16) + (self.g << 8) + self.b
 
 
-# colour for player that had not picked a colour yet
 BLANK = Colour(255, 255, 255)
+BLACK = Colour(0, 0, 0)
 
-BLACK = Colour(2, 2, 2)
-BLACK.pretty_name = "black"
-BLUE = Colour(26, 57, 147)
-BLUE.pretty_name = "blue"
-GREEN = Colour(11, 93, 34)
-GREEN.pretty_name = "green"
-ORANGE = Colour(234, 86, 6)
-ORANGE.pretty_name = "orange"
-PINK = Colour(204, 74, 173)
-PINK.pretty_name = "pink"
-PURPLE = Colour(96, 19, 88)
-PURPLE.pretty_name = "purple"
-RED = Colour(169, 34, 34)
-RED.pretty_name = "red"
-YELLOW = Colour(254, 230, 25)
-YELLOW.pretty_name = "yellow"
+# colour for a player that had not picked a colour yet
+PLAYER_BLANK = Colour(255, 255, 255)
+PLAYER_BLANK.pretty_name = "blank"
+
+PLAYER_BLACK = Colour(2, 2, 2)
+PLAYER_BLACK.pretty_name = "black"
+PLAYER_BLUE = Colour(26, 57, 147)
+PLAYER_BLUE.pretty_name = "blue"
+PLAYER_GREEN = Colour(11, 93, 34)
+PLAYER_GREEN.pretty_name = "green"
+PLAYER_ORANGE = Colour(234, 86, 6)
+PLAYER_ORANGE.pretty_name = "orange"
+PLAYER_PINK = Colour(204, 74, 173)
+PLAYER_PINK.pretty_name = "pink"
+PLAYER_PURPLE = Colour(96, 19, 88)
+PLAYER_PURPLE.pretty_name = "purple"
+PLAYER_RED = Colour(169, 34, 34)
+PLAYER_RED.pretty_name = "red"
+PLAYER_YELLOW = Colour(254, 230, 25)
+PLAYER_YELLOW.pretty_name = "yellow"
