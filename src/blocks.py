@@ -254,16 +254,41 @@ def main():
     width = 85
     height = 65
     colours.PLAYER_PINK = colours.Colour(234, 60, 230)
-    colours_table = [colours.PLAYER_BLACK, colours.PLAYER_BLUE, colours.PLAYER_GREEN,
-                      colours.PLAYER_ORANGE, colours.PLAYER_BLANK, colours.PLAYER_PINK,
-                      colours.PLAYER_PURPLE, colours.PLAYER_RED, colours.PLAYER_YELLOW]
-    players_table = ["ROMAIN", "SHIZU", "JULIE", "PIERRE", "SEBASTIEN", "FLORENT", "MICHAEL", "DAMIEN", "MASSIMO"]
+    colours_table = [
+        colours.PLAYER_BLACK,
+        colours.PLAYER_BLUE,
+        colours.PLAYER_GREEN,
+        colours.PLAYER_ORANGE,
+        colours.PLAYER_BLANK,
+        colours.PLAYER_PINK,
+        colours.PLAYER_PURPLE,
+        colours.PLAYER_RED,
+        colours.PLAYER_YELLOW,
+    ]
+    players_table = [
+        "ROMAIN",
+        "SHIZU",
+        "JULIE",
+        "PIERRE",
+        "SEBASTIEN",
+        "FLORENT",
+        "MICHAEL",
+        "DAMIEN",
+        "MASSIMO",
+    ]
     for x in range(3):
-        for y in range (3):
-            current_colour = colours_table[x+3*y]
-            current_player = players_table[x+3*y]
+        for y in range(3):
+            current_colour = colours_table[x + 3 * y]
+            current_player = players_table[x + 3 * y]
             lightness = current_colour.get_perceived_lightness()
-            button = ButtonRectangle(dx + (dx + width)*x, dy + (dy + height)*y, width, height, f"{current_player}", current_colour)
+            button = ButtonRectangle(
+                dx + (dx + width) * x,
+                dy + (dy + height) * y,
+                width,
+                height,
+                f"{current_player}",
+                current_colour,
+            )
             button.draw()
             print(button)
     pass
