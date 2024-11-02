@@ -28,31 +28,32 @@ class Colour:
         )
 
     def _linearize(self, v):
+        v = v / 255
         if v <= 0.04045:
             return v / 12.92
         else:
             return pow(((v + 0.055) / 1.055), 2.4)
 
-    def get_percieved_lightness(self):
+    def get_perceived_lightness(self):
         r_lin = self._linearize(self.r)
         g_lin = self._linearize(self.g)
         b_lin = self._linearize(self.b)
         luminance = 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin
         if luminance <= 0.008856:
-            percieved_lightness = luminance * 903.3
+            perceived_lightness = luminance * 903.3
         else:
-            percieved_lightness = pow(luminance, 1 / 3) * 116 - 16
-        return percieved_lightness
+            perceived_lightness = pow(luminance, 1 / 3) * 116 - 16
+        return perceived_lightness
 
     def get_contrasting_text(self):
-        if self.get_percieved_lightness() < 0.5:
+        if self.get_perceived_lightness() < 50:
             return WHITE
         else:
             return BLACK
 
     @property
     def hexa(self):
-        return hex((self.r << 16) + (self.g << 8) + self.b)
+        return (self.r << 16) + (self.g << 8) + self.b
 
     @property
     def pretty_name(self):
@@ -92,7 +93,7 @@ PLAYER_GREEN = Colour(11, 93, 34)
 PLAYER_GREEN.pretty_name = "player green"
 PLAYER_ORANGE = Colour(234, 86, 6)
 PLAYER_ORANGE.pretty_name = "player orange"
-PLAYER_PINK = Colour(204, 74, 173)
+PLAYER_PINK = Colour(234, 60, 230)
 PLAYER_PINK.pretty_name = "player pink"
 PLAYER_PURPLE = Colour(96, 19, 88)
 PLAYER_PURPLE.pretty_name = "player purple"

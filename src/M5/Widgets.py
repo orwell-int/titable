@@ -1,5 +1,6 @@
 class FONTS:
     DejaVu18 = 3
+    DejaVu12 = 2
 
 
 class Rectangle:
@@ -21,7 +22,7 @@ class Rectangle:
         self.dy = dy
 
     def setColor(self, border_colour, fill_colour):
-        self.border_colour = border_color
+        self.border_colour = border_colour
         self.fill_colour = fill_colour
 
     def setVisible(self, value):
@@ -45,7 +46,7 @@ class Circle:
         self.radius = radius
 
     def setColor(self, border_colour, fill_colour):
-        self.border_colour = border_color
+        self.border_colour = border_colour
         self.fill_colour = fill_colour
 
     def setVisible(self, value):
@@ -67,7 +68,7 @@ class Title:
     def setTextCursor(self, x_text):
         self.x_text = x_text
 
-    def setColor(text_colour, fill_colour):
+    def setColor(self, text_colour, fill_colour):
         self.text_colour = text_colour
         self.fill_colour = fill_colour
 
@@ -91,7 +92,7 @@ class Line:
         self.y2 = y2
 
     def setColor(self, colour):
-        self.colour = color
+        self.colour = colour
 
 
 class Triangle:
@@ -115,7 +116,7 @@ class Triangle:
         self.y3 = y3
 
     def setColor(self, border_colour, fill_colour):
-        self.border_colour = border_color
+        self.border_colour = border_colour
         self.fill_colour = fill_colour
 
     def setVisible(self, value):

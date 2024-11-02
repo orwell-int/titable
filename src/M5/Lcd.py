@@ -8,13 +8,13 @@ def setFont(index: int):
     FONT = index
 
 
-def textWodth(text: str) -> int:
+def textWidth(text: str) -> int:
     return 0
 
 
-def getFontHeight() -> int:
+def fontHeight() -> int:
     global FONT
-    if Widgets.FONT.DejaVu18 == FONT:
+    if Widgets.FONTS.DejaVu18 == FONT:
         return 18
     else:
         # not implemented
@@ -29,9 +29,9 @@ def drawString(text: str, tx: int, ty: int):
     pass
 
 
-def drawRectangle(tx: int, ty: int, dx: int, dy: int, colour_hexa: int):
+def drawRect(tx: int, ty: int, dx: int, dy: int, colour_hexa: int):
     pass
 
 
-def fillRectangle(tx: int, ty: int, dx: int, dy: int, colour_hexa: int):
+def fillRect(tx: int, ty: int, dx: int, dy: int, colour_hexa: int):
     pass

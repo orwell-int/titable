@@ -18,7 +18,7 @@ class DecorationText(Decoration):
         cy,
         text_colour: Colour,
         fill_colour: Colour,
-        font=Widgets.FONTS.DejaVu18,
+        font=Widgets.FONTS.DejaVu12,
     ):
         super().__init__()
         self._text = text
@@ -44,14 +44,14 @@ class DecorationText(Decoration):
         if self._changed:
             Lcd.setFont(self._font)
             width = Lcd.textWidth(self._text)
-            height = Lcd.getFontHeight()
+            height = Lcd.fontHeight()
             tx = self._cx - width // 2
             ty = self._cy - height // 2
             if self._visible:
                 Lcd.setTextColor(self._text_colour.hexa, self._fill_colour.hexa)
                 Lcd.drawString(self._text, tx, ty)
             else:
-                Lcd.fillRectangle(tx, ty, width, height, colours.BLACK)
+                Lcd.fillRect(tx, ty, width, height, colours.BLACK)
             self._changed = False
 
     @property
@@ -206,6 +206,10 @@ class ButtonRectangle:
         return self.x <= x <= (self.x + self.dx) and self.y <= y <= (self.y + self.dy)
 
     @property
+    def enabled(self):
+        return self._enabled
+
+    @border_colour.setter
     def enabled(self, value):
         if self._enabled != value:
             self._enabled = value
@@ -231,22 +235,37 @@ class ButtonRectangle:
 
     def draw(self):
         if self._changed:
-            Lcd.drawRectangle(
-                self.x, self.y, self.dx, self.dy, self._current_border_colour
+            Lcd.drawRect(
+                self.x, self.y, self.dx, self.dy, self._current_border_colour.hexa
             )
-            Lcd.fillRectangle(
+            Lcd.fillRect(
                 self.x + 1,
                 self.y + 1,
                 self.dx - 2,
                 self.dy - 2,
-                self._current_fill_colour,
+                self._current_fill_colour.hexa,
             )
+            self.decoration_text.draw()
 
 
 def main():
-    button = ButtonRectangle(4, 4, 70, 70, "Michael", colours.PLAYER_BLUE)
-    button.draw()
-    print(button)
+    dx = 4
+    dy = 4
+    width = 85
+    height = 65
+    colours.PLAYER_PINK = colours.Colour(234, 60, 230)
+    colours_table = [colours.PLAYER_BLACK, colours.PLAYER_BLUE, colours.PLAYER_GREEN,
+                      colours.PLAYER_ORANGE, colours.PLAYER_BLANK, colours.PLAYER_PINK,
+                      colours.PLAYER_PURPLE, colours.PLAYER_RED, colours.PLAYER_YELLOW]
+    players_table = ["ROMAIN", "SHIZU", "JULIE", "PIERRE", "SEBASTIEN", "FLORENT", "MICHAEL", "DAMIEN", "MASSIMO"]
+    for x in range(3):
+        for y in range (3):
+            current_colour = colours_table[x+3*y]
+            current_player = players_table[x+3*y]
+            lightness = current_colour.get_perceived_lightness()
+            button = ButtonRectangle(dx + (dx + width)*x, dy + (dy + height)*y, width, height, f"{current_player}", current_colour)
+            button.draw()
+            print(button)
     pass
 
 
