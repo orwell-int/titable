@@ -46,9 +46,9 @@ class Colour:
 
     def get_contrasting_text(self):
         if self.get_percieved_lightness() < 0.5:
-            return Colour(255, 255, 255)
+            return WHITE
         else:
-            return Colour(0, 0, 0)
+            return BLACK
 
     @property
     def hexa(self):
@@ -75,26 +75,28 @@ class Colour:
         return (self.r << 16) + (self.g << 8) + self.b
 
 
-BLANK = Colour(255, 255, 255)
+WHITE = Colour(255, 255, 255)
+WHITE.pretty_name = "white"
 BLACK = Colour(0, 0, 0)
+BLACK.pretty_name = "black"
 
 # colour for a player that had not picked a colour yet
 PLAYER_BLANK = Colour(255, 255, 255)
-PLAYER_BLANK.pretty_name = "blank"
+PLAYER_BLANK.pretty_name = "player blank"
 
 PLAYER_BLACK = Colour(2, 2, 2)
-PLAYER_BLACK.pretty_name = "black"
+PLAYER_BLACK.pretty_name = "player black"
 PLAYER_BLUE = Colour(26, 57, 147)
-PLAYER_BLUE.pretty_name = "blue"
+PLAYER_BLUE.pretty_name = "player blue"
 PLAYER_GREEN = Colour(11, 93, 34)
-PLAYER_GREEN.pretty_name = "green"
+PLAYER_GREEN.pretty_name = "player green"
 PLAYER_ORANGE = Colour(234, 86, 6)
-PLAYER_ORANGE.pretty_name = "orange"
+PLAYER_ORANGE.pretty_name = "player orange"
 PLAYER_PINK = Colour(204, 74, 173)
-PLAYER_PINK.pretty_name = "pink"
+PLAYER_PINK.pretty_name = "player pink"
 PLAYER_PURPLE = Colour(96, 19, 88)
-PLAYER_PURPLE.pretty_name = "purple"
+PLAYER_PURPLE.pretty_name = "player purple"
 PLAYER_RED = Colour(169, 34, 34)
-PLAYER_RED.pretty_name = "red"
+PLAYER_RED.pretty_name = "player red"
 PLAYER_YELLOW = Colour(254, 230, 25)
-PLAYER_YELLOW.pretty_name = "yellow"
+PLAYER_YELLOW.pretty_name = "player yellow"

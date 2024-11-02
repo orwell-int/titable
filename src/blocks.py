@@ -121,7 +121,7 @@ class ButtonRectangle:
         # align_decoration_h: int,
         # align_decoration_v: int,
         fill_colour: Colour,
-        border_colour: Colour = colours.BLANK,
+        border_colour: Colour = colours.WHITE,
         disabled_fill_colour: Colour = None,
         disabled_border_colour: Colour = None,
     ):
