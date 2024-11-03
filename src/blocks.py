@@ -110,6 +110,105 @@ class AlignmentVertical:
     BOTTOM = 2
 
 
+class Rectangle:
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        dx: int,
+        dy: int,
+        # decoration,  # text or image
+        text: str,
+        # align_decoration_h: int,
+        # align_decoration_v: int,
+        fill_colour: Colour,
+        border_colour: Colour = colours.WHITE,
+    ):
+        self.x = x
+        self.y = y
+        self.dx = dx
+        self.dy = dy
+        # self.decoration = decoration
+        self._text = text
+        # self.align_decoration_h = align_decoration_h
+        # self.align_decoration_v = align_decoration_v
+        self._fill_colour = fill_colour
+        self._border_colour = border_colour
+        self._text_colour = self._fill_colour.get_contrasting_text()
+        if text:
+            self.decoration_text = DecorationText(
+                self._text,
+                x + dx // 2,
+                y + dy // 2,
+                self._text_colour,
+                self._fill_colour,
+            )
+        else:
+            self.decoration_text = None
+        self._changed = True
+
+    @property
+    def text(self):
+        return self._text
+
+    @property
+    def text_colour(self):
+        return self._text_colour
+
+    @text_colour.setter
+    def text_colour(self, text_colour: Colour):
+        self._text_colour = text_colour
+        self._changed = True
+
+    @property
+    def fill_colour(self):
+        return self._fill_colour
+
+    @fill_colour.setter
+    def fill_colour(self, fill_colour: Colour):
+        self._fill_colour = fill_colour
+        # use setter on purpose
+        self.text_colour = self._fill_colour.get_contrasting_text()
+        self._changed = True
+
+    @property
+    def border_colour(self):
+        return self._border_colour
+
+    @border_colour.setter
+    def border_colour(self, border_colour: Colour):
+        self._border_colour = border_colour
+        self._changed = True
+
+    def __repr__(self):
+        string = f"ButtonRectangle(x={self.x}, y={self.y}, "
+        # string += f"decoration={self.decoration}, "
+        string += f"text={self._text}, "
+        # string += f"align_decoration_h={self.align_decoration_h}, "
+        # string += f"align_decoration_v={self.align_decoration_v}, "
+        string += f"fill_colour={self._fill_colour}, "
+        string += f"border_colour={self._border_colour}, "
+        string += f"text_colour={self._text_colour}, "
+        string += f"changed={self._changed})"
+        return string
+
+    def __str__(self):
+        return self.__repr__()
+
+    def draw(self):
+        if self._changed:
+            Lcd.drawRect(self.x, self.y, self.dx, self.dy, self._border_colour.hexa)
+            Lcd.fillRect(
+                self.x + 1,
+                self.y + 1,
+                self.dx - 2,
+                self.dy - 2,
+                self._fill_colour.hexa,
+            )
+            if self.decoration_text:
+                self.decoration_text.draw()
+
+
 class ButtonRectangle:
     def __init__(
         self,
