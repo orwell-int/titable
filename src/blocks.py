@@ -290,7 +290,6 @@ class ButtonRectangle(Visible):
             font,
         )
         self._enabled = True
-        self._changed = True
 
     @property
     def text(self):
@@ -402,10 +401,171 @@ class ButtonRectangle(Visible):
             self.decoration_text.draw()
 
     def notify(self, key, value):
-        if 'name' == key:
+        if "name" == key:
             self.text = value
-        elif 'colour' == key:
+        elif "colour" == key:
             self.fill_colour = value
+
+
+class ButtonCircle(Visible):
+    def __init__(
+        self,
+        cx: int,
+        cy: int,
+        radius: int,
+        # decoration,  # text or image
+        text: str,
+        # align_decoration_h: int,
+        # align_decoration_v: int,
+        fill_colour: Colour,
+        border_colour: Colour = colours.WHITE,
+        font: int = Widgets.FONTS.DejaVu12,
+        disabled_fill_colour: Colour = None,
+        disabled_border_colour: Colour = None,
+    ):
+        super().__init__()
+        self.cx = cx
+        self.cy = cy
+        self.radius = radius
+        self.r2 = radius * radius
+        # self.decoration = decoration
+        self._text = text
+        # self.align_decoration_h = align_decoration_h
+        # self.align_decoration_v = align_decoration_v
+        self._fill_colour = fill_colour
+        self._border_colour = border_colour
+        self._disabled_fill_colour = disabled_fill_colour
+        self._disabled_border_colour = disabled_border_colour
+        self._text_colour = self._fill_colour.get_contrasting_text()
+        self._disabled_text_colour = self._text_colour.build_different()
+        self._current_fill_colour = self._fill_colour
+        self._current_border_colour = self._border_colour
+        self.decoration_text = DecorationText(
+            self._text,
+            cx,
+            cy,
+            self._text_colour,
+            self._fill_colour,
+            font,
+        )
+        self._enabled = True
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, text):
+        if self._text != text:
+            self._text = text
+            if self.decoration_text:
+                self.decoration_text.text = text
+
+    @property
+    def text_colour(self):
+        return self._text_colour
+
+    @text_colour.setter
+    def text_colour(self, text_colour: Colour):
+        self._text_colour = text_colour
+        self._disabled_text_colour = self._text_colour.build_different()
+        self._changed = True
+
+    @property
+    def fill_colour(self):
+        return self._fill_colour
+
+    @fill_colour.setter
+    def fill_colour(self, fill_colour: Colour):
+        self._fill_colour = fill_colour
+        # use setter on purpose
+        self.text_colour = self._fill_colour.get_contrasting_text()
+        self._changed = True
+
+    @property
+    def border_colour(self):
+        return self._border_colour
+
+    @border_colour.setter
+    def border_colour(self, border_colour: Colour):
+        self._border_colour = border_colour
+        self._changed = True
+
+    def __repr__(self):
+        string = f"ButtonCircle(cx={self.cx}, cy={self.cy}, "
+        string += f"radius={self.radius}, "
+        # string += f"decoration={self.decoration}, "
+        string += f"text={self._text}, "
+        # string += f"align_decoration_h={self.align_decoration_h}, "
+        # string += f"align_decoration_v={self.align_decoration_v}, "
+        string += f"fill_colour={self._fill_colour}, "
+        string += f"border_colour={self._border_colour}, "
+        string += f"disabled_fill_colour={self._disabled_fill_colour}, "
+        string += f"disabled_border_colour={self._disabled_border_colour},"
+        string += f"text_colour={self._text_colour}, "
+        string += f"disabled_text_colour={self._disabled_text_colour}, "
+        string += f"enabled={self._enabled}, "
+        string += f"changed={self._changed})"
+        return string
+
+    def __str__(self):
+        return self.__repr__()
+
+    def contains(self, x, y):
+        if not self._enabled:
+            return False
+        d2 = pow(x - self.cx, 2) + pow(y - self.cy, 2)
+        return d2 <= self._r2
+
+    @property
+    def enabled(self):
+        return self._enabled
+
+    @border_colour.setter
+    def enabled(self, value):
+        if self._enabled != value:
+            self._enabled = value
+            if self._enabled:
+                self._current_fill_colour = self._fill_colour
+                self._current_border_colour = self._border_colour
+                self.decoration_text.text_colour = self._text_colour
+                self.decoration_text.fill_colour = self._fill_colour
+            else:
+                if self._disabled_fill_colour is None:
+                    disabled_fill_colour = self._fill_colour.build_different()
+                else:
+                    disabled_fill_colour = self._disabled_fill_colour
+                if self._disabled_border_colour is None:
+                    disabled_border_colour = self._border_colour.build_different()
+                else:
+                    disabled_border_colour = self._disabled_border_colour
+                self._current_fill_colour = disabled_fill_colour
+                self._current_border_colour = disabled_border_colour
+                self.decoration_text.text_colour = self._disabled_text_colour
+                self.decoration_text.fill_colour = disabled_fill_colour
+            self.enabled = value
+
+    def draw(self):
+        if not self._visible:
+            return
+        if self._changed:
+            Lcd.drawCircle(
+                self.cx, self.cy, self.radius, self._current_border_colour.hexa
+            )
+            Lcd.fillCircle(
+                self.cx,
+                self.cy,
+                self.radius - 1,
+                self._current_fill_colour.hexa,
+            )
+            self.decoration_text.draw()
+
+    def notify(self, key, value):
+        if "name" == key:
+            self.text = value
+        elif "colour" == key:
+            self.fill_colour = value
+
 
 def main():
     M5.begin()

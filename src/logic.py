@@ -305,7 +305,7 @@ class Player:
         self._name = name
         if self._observers_name:
             for observer in self._observers_name:
-                observer.notify('name', name)
+                observer.notify("name", name)
 
     @property
     def colour(self):
@@ -317,7 +317,7 @@ class Player:
         self._colour = colour
         if self._observers_colour:
             for observer in self._observers_colour:
-                observer.notify('colour', colour)
+                observer.notify("colour", colour)
 
     def can_play(self):
         phase = self._game.phase

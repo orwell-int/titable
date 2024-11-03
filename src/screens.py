@@ -11,11 +11,11 @@ class ScreenTypes:
     # a few buttons spread vertically
     WELCOME = 0
     # players 2 x 3 with switch between name and colour
-    CONFIG_PLAYERS = 1
+    SETUP_PLAYERS = 1
     # fancy letters selector with erase button
-    CONFIG_PLAYER_NAME = 2
+    SETUP_PLAYER_NAME = 2
     # 3 x 3 buttons (colour -> name + disabled as colours get picked)
-    CONFIG_PLAYER_COLOUR = 3
+    SETUP_PLAYER_COLOUR = 3
     # players 2 x 3 (with selected strategy) with button to end strategy phase
     # (button only enabled when every player has picked)
     # shows round (and turn) in left bar
@@ -49,6 +49,7 @@ class Screen:
         name,
         title,
         title_colour,
+        has_return=True,
     ):
         self.name = name
         self.title = title
@@ -87,17 +88,32 @@ class Screen:
             colours.PALETTE_DARK_BLUE,
             Screen.COLOUR_BORDER,
         )
+        if has_return:
+            max_d = max(LEFT_BAR_WIDTH // 2, TITLE_HEIGHT // 2)
+            self.return_button = blocks.ButtonCircle(
+                max_d,
+                max_d,
+                max_d - 4,
+                "<<",
+                colours.PALETTE_LIGHT_GREEN,
+                colours.PALETTE_LIGHT_GREEN,
+                # Screen.COLOUR_BORDER,
+            )
+        else:
+            self.return_button = None
 
     def draw(self):
         self.title_rectangle.draw()
         self.left_bar.draw()
         self.line.draw()
         self.background.draw()
+        if self.return_button:
+            self.return_button.draw()
 
 
 class ScreenWelcome(Screen):
     def __init__(self):
-        super().__init__("welcome", "TI 4 assistant", colours.WHITE)
+        super().__init__("welcome", "TI 4 assistant", colours.WHITE, has_return=False)
         button_sx = 150
         button_sy = 65
         button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
@@ -148,6 +164,21 @@ class ScreenSetup(Screen):
     def __init__(self, players: list[Player]):
         super().__init__("setup", None, colours.WHITE)
         button_font = Widgets.FONTS.DejaVu18
+        dy = 4
+        top_button_sy = TITLE_HEIGHT - dy * 2
+        top_button_sx = 100
+        delta_x = (MAX_X - LEFT_BAR_WIDTH - top_button_sx) // 2
+        self._button_colour_name = blocks.ButtonRectangle(
+            LEFT_BAR_WIDTH + delta_x,
+            dy,
+            top_button_sx,
+            top_button_sy,
+            "Colour",
+            colours.PALETTE_LIGHT_GREEN,
+            colours.PALETTE_LIGHT_GREEN,
+            # Screen.COLOUR_BORDER,
+            button_font,
+        )
         num_columns = 2
         num_lines = 3
         button_sx = (INNER_X + 2) // num_columns
@@ -191,6 +222,7 @@ class ScreenSetup(Screen):
 
     def draw(self):
         super().draw()
+        self._button_colour_name.draw()
         for button in self._buttons:
             button.draw()
         for rectangle in self._rectangles:

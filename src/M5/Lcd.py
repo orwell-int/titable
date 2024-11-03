@@ -82,3 +82,11 @@ def drawRect(tx: int, ty: int, dx: int, dy: int, colour_hexa: int):
 
 def fillRect(tx: int, ty: int, dx: int, dy: int, colour_hexa: int):
     pygame.draw.rect(M5.DISPLAY, colours.rgb(colour_hexa), pygame.Rect(tx, ty, dx, dy))
+
+
+def drawCircle(cx: int, cy: int, radius: int, colour_hexa: int):
+    pygame.draw.circle(M5.DISPLAY, colours.rgb(colour_hexa), (cx, cy), radius, 1)
+
+
+def fillCircle(cx: int, cy: int, radius: int, colour_hexa: int):
+    pygame.draw.circle(M5.DISPLAY, colours.rgb(colour_hexa), (cx, cy), radius)
