@@ -11,6 +11,16 @@ class Colour:
         self.b = b
         self._pretty_name = None
 
+    @staticmethod
+    def from_hexa_str(hexa: str):
+        length = len(hexa)
+        if 5 == length:
+            hexa = "0" + hexa
+        r = int(hexa[0:2], 16)
+        g = int(hexa[2:4], 16)
+        b = int(hexa[4:6], 16)
+        return Colour(r, g, b)
+
     def _build_different(self, v):
         if v < 128:
             delta = 255 - v
@@ -110,3 +120,14 @@ PLAYER_RED = Colour(169, 34, 34)
 PLAYER_RED.pretty_name = "player red"
 PLAYER_YELLOW = Colour(254, 230, 25)
 PLAYER_YELLOW.pretty_name = "player yellow"
+
+PALETTE_DARK_BLUE = Colour.from_hexa_str("192B48")
+PALETTE_DARK_BLUE.pretty_name = "oxford blue"
+PALETTE_DARK_GREEN = Colour.from_hexa_str("212B1E")
+PALETTE_DARK_GREEN.pretty_name = "black olive"
+PALETTE_LIGHT_BLUE = Colour.from_hexa_str("1379BD")
+PALETTE_LIGHT_BLUE.pretty_name = "honolulu blue"
+PALETTE_LIGHT_GREEN = Colour.from_hexa_str("517A33")
+PALETTE_LIGHT_GREEN.pretty_name = "fern green"
+PALETTE_GOLD = Colour.from_hexa_str("BA862B")
+PALETTE_GOLD.pretty_name = "dark goldenrod"

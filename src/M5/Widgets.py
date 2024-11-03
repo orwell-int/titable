@@ -1,6 +1,9 @@
 class FONTS:
-    DejaVu18 = 3
+    DejaVu9 = 1
     DejaVu12 = 2
+    DejaVu18 = 3
+    DejaVu24 = 4
+    DejaVu40 = 5
 
 
 class Rectangle:

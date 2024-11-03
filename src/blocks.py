@@ -15,8 +15,8 @@ class DecorationText(Decoration):
     def __init__(
         self,
         text,
-        cx,
-        cy,
+        cx,  # center
+        cy,  # center
         text_colour: Colour,
         fill_colour: Colour,
         font=Widgets.FONTS.DejaVu12,
@@ -110,6 +110,33 @@ class AlignmentVertical:
     BOTTOM = 2
 
 
+class Line:
+    def __init__(self, x1: int, y1: int, x2: int, y2: int, colour: Colour):
+        self._x1 = x1
+        self._y1 = y1
+        self._x2 = x2
+        self._y2 = y2
+        self._colour = colour
+        self._changed = True
+
+    @property
+    def colour(self):
+        return self._colour
+
+    @colour.setter
+    def colour(self, colour: Colour):
+        self._colour = colour
+        self._changed = True
+
+    def force_update(self):
+        self._changed = True
+
+    def draw(self):
+        if self._changed:
+            Lcd.drawLine(self._x1, self._y1, self._x2, self._y2, self._colour.hexa)
+            self._changed = False
+
+
 class Rectangle:
     def __init__(
         self,
@@ -123,6 +150,7 @@ class Rectangle:
         # align_decoration_v: int,
         fill_colour: Colour,
         border_colour: Colour = colours.WHITE,
+        font: int = Widgets.FONTS.DejaVu12,
     ):
         self.x = x
         self.y = y
@@ -142,6 +170,7 @@ class Rectangle:
                 y + dy // 2,
                 self._text_colour,
                 self._fill_colour,
+                font,
             )
         else:
             self.decoration_text = None
@@ -181,7 +210,7 @@ class Rectangle:
         self._changed = True
 
     def __repr__(self):
-        string = f"ButtonRectangle(x={self.x}, y={self.y}, "
+        string = f"Rectangle(x={self.x}, y={self.y}, "
         # string += f"decoration={self.decoration}, "
         string += f"text={self._text}, "
         # string += f"align_decoration_h={self.align_decoration_h}, "
@@ -222,6 +251,7 @@ class ButtonRectangle:
         # align_decoration_v: int,
         fill_colour: Colour,
         border_colour: Colour = colours.WHITE,
+        font: int = Widgets.FONTS.DejaVu12,
         disabled_fill_colour: Colour = None,
         disabled_border_colour: Colour = None,
     ):
@@ -242,7 +272,12 @@ class ButtonRectangle:
         self._current_fill_colour = self._fill_colour
         self._current_border_colour = self._border_colour
         self.decoration_text = DecorationText(
-            self._text, x + dx // 2, y + dy // 2, self._text_colour, self._fill_colour
+            self._text,
+            x + dx // 2,
+            y + dy // 2,
+            self._text_colour,
+            self._fill_colour,
+            font,
         )
         self._enabled = True
         self._changed = True

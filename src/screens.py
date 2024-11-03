@@ -2,6 +2,8 @@ from colours import Colour
 import colours
 import blocks
 
+from M5 import Widgets
+
 
 # there is always a title with a "back" button
 class ScreenTypes:
@@ -31,7 +33,7 @@ class ScreenTypes:
 
 MAX_X = 320
 MAX_Y = 240
-TITLE_HEIGHT = 24
+TITLE_HEIGHT = 28
 LEFT_BAR_WIDTH = 50
 
 
@@ -47,32 +49,66 @@ class Screen:
         self.x_text = 80
         self.title_colour = title_colour
         self.title_rectangle = blocks.Rectangle(
-            1, 1, MAX_X, TITLE_HEIGHT, title, Colour(200, 200, 250)
+            1,
+            1,
+            MAX_X - 1,
+            TITLE_HEIGHT,
+            title,
+            colours.PALETTE_DARK_GREEN,
+            colours.PALETTE_GOLD,
         )
         self.left_bar = blocks.Rectangle(
-            1, TITLE_HEIGHT + 1, LEFT_BAR_WIDTH, MAX_Y, None, Colour(200, 250, 200)
+            1,
+            TITLE_HEIGHT,
+            LEFT_BAR_WIDTH,
+            MAX_Y - TITLE_HEIGHT,
+            None,
+            colours.PALETTE_DARK_GREEN,
+            colours.PALETTE_GOLD,
+        )
+        self.line = blocks.Line(
+            2,
+            TITLE_HEIGHT,
+            LEFT_BAR_WIDTH - 1,
+            TITLE_HEIGHT,
+            colours.PALETTE_DARK_GREEN,
+        )
+        self.background = blocks.Rectangle(
+            LEFT_BAR_WIDTH,
+            TITLE_HEIGHT,
+            MAX_X - LEFT_BAR_WIDTH,
+            MAX_Y - TITLE_HEIGHT,
+            None,
+            colours.PALETTE_DARK_BLUE,
+            colours.PALETTE_GOLD,
         )
 
     def draw(self):
         self.title_rectangle.draw()
         self.left_bar.draw()
+        self.line.draw()
+        self.background.draw()
 
 
 class ScreenWelcome(Screen):
     def __init__(self):
         super().__init__("welcome", "TI 4 assistant", colours.WHITE)
-        button_x_offset = 110
         button_sx = 150
         button_sy = 65
+        button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
+        button_x_offset = LEFT_BAR_WIDTH + 1 + button_x_delta
         dx = 4
         dy = 4
+        button_font = Widgets.FONTS.DejaVu18
         self._button_setup = blocks.ButtonRectangle(
             button_x_offset,
             TITLE_HEIGHT + dy,
             button_sx,
             button_sy,
             "Setup",
-            Colour(120, 120, 120),
+            colours.PALETTE_LIGHT_GREEN,
+            colours.PALETTE_GOLD,
+            button_font,
         )
         play_or_resume = "Play"
         self._button_play = blocks.ButtonRectangle(
@@ -81,7 +117,9 @@ class ScreenWelcome(Screen):
             button_sx,
             button_sy,
             play_or_resume,
-            Colour(120, 120, 120),
+            colours.PALETTE_LIGHT_GREEN,
+            colours.PALETTE_GOLD,
+            button_font,
         )
         self._button_reset = blocks.ButtonRectangle(
             button_x_offset,
@@ -89,7 +127,9 @@ class ScreenWelcome(Screen):
             button_sx,
             button_sy,
             "Reset",
-            Colour(120, 120, 120),
+            colours.PALETTE_LIGHT_GREEN,
+            colours.PALETTE_GOLD,
+            button_font,
         )
 
     def draw(self):
@@ -100,11 +140,21 @@ class ScreenWelcome(Screen):
 
 
 def main():
+    import sys
     import M5
 
     M5.begin()
-    screen_welcome = ScreenWelcome()
-    screen_welcome.draw()
+    select = 1
+    if len(sys.argv) > 1:
+        try:
+            param = int(sys.argv[1])
+            if 0 < param <= 1:
+                select = param
+        except:
+            pass
+    if 1 == select:
+        screen_welcome = ScreenWelcome()
+        screen_welcome.draw()
     M5.update()
 
 
