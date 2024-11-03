@@ -1,6 +1,7 @@
 from colours import Colour
 import colours
 import blocks
+from logic import Player
 
 from M5 import Widgets
 
@@ -36,8 +37,13 @@ MAX_Y = 240
 TITLE_HEIGHT = 28
 LEFT_BAR_WIDTH = 50
 
+INNER_X = MAX_X - LEFT_BAR_WIDTH - 1
+INNER_Y = MAX_Y - TITLE_HEIGHT - 1
+
 
 class Screen:
+    COLOUR_BORDER = colours.PALETTE_GOLD
+
     def __init__(
         self,
         name,
@@ -46,7 +52,6 @@ class Screen:
     ):
         self.name = name
         self.title = title
-        self.x_text = 80
         self.title_colour = title_colour
         self.title_rectangle = blocks.Rectangle(
             1,
@@ -55,7 +60,7 @@ class Screen:
             TITLE_HEIGHT,
             title,
             colours.PALETTE_DARK_GREEN,
-            colours.PALETTE_GOLD,
+            Screen.COLOUR_BORDER,
         )
         self.left_bar = blocks.Rectangle(
             1,
@@ -64,7 +69,7 @@ class Screen:
             MAX_Y - TITLE_HEIGHT,
             None,
             colours.PALETTE_DARK_GREEN,
-            colours.PALETTE_GOLD,
+            Screen.COLOUR_BORDER,
         )
         self.line = blocks.Line(
             2,
@@ -80,7 +85,7 @@ class Screen:
             MAX_Y - TITLE_HEIGHT,
             None,
             colours.PALETTE_DARK_BLUE,
-            colours.PALETTE_GOLD,
+            Screen.COLOUR_BORDER,
         )
 
     def draw(self):
@@ -107,7 +112,7 @@ class ScreenWelcome(Screen):
             button_sy,
             "Setup",
             colours.PALETTE_LIGHT_GREEN,
-            colours.PALETTE_GOLD,
+            Screen.COLOUR_BORDER,
             button_font,
         )
         play_or_resume = "Play"
@@ -118,7 +123,7 @@ class ScreenWelcome(Screen):
             button_sy,
             play_or_resume,
             colours.PALETTE_LIGHT_GREEN,
-            colours.PALETTE_GOLD,
+            Screen.COLOUR_BORDER,
             button_font,
         )
         self._button_reset = blocks.ButtonRectangle(
@@ -128,7 +133,7 @@ class ScreenWelcome(Screen):
             button_sy,
             "Reset",
             colours.PALETTE_LIGHT_GREEN,
-            colours.PALETTE_GOLD,
+            Screen.COLOUR_BORDER,
             button_font,
         )
 
@@ -139,22 +144,84 @@ class ScreenWelcome(Screen):
         self._button_reset.draw()
 
 
+class ScreenSetup(Screen):
+    def __init__(self, players: list[Player]):
+        super().__init__("setup", None, colours.WHITE)
+        button_font = Widgets.FONTS.DejaVu18
+        num_columns = 2
+        num_lines = 3
+        button_sx = (INNER_X + 2) // num_columns
+        button_sy = (INNER_Y + 2) // num_lines
+        num_players = len(players)
+        self._buttons = []
+        self._rectangles = []
+        for line in range(num_lines):
+            last_line = line == (num_lines - 1)
+            for column in range(num_columns):
+                last_column = column == (num_columns - 1)
+                index = column + line * num_columns
+                x = LEFT_BAR_WIDTH + (button_sx - 1) * column
+                y = TITLE_HEIGHT + (button_sy - 1) * line
+                sx = MAX_X - x if (last_column) else button_sx
+                sy = MAX_Y - y if (last_line) else button_sy
+                if index < num_players:
+                    player = players[index]
+                    button = blocks.ButtonRectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        f"{player.name}",
+                        player.colour,
+                        Screen.COLOUR_BORDER,
+                        button_font,
+                    )
+                    self._buttons.append(button)
+                else:
+                    rectangle = blocks.Rectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        None,
+                        colours.WHITE,
+                        Screen.COLOUR_BORDER,
+                    )
+                    self._rectangles.append(rectangle)
+
+    def draw(self):
+        super().draw()
+        for button in self._buttons:
+            button.draw()
+        for rectangle in self._rectangles:
+            rectangle.draw()
+
+
 def main():
     import sys
     import M5
+    import logic
 
     M5.begin()
     select = 1
     if len(sys.argv) > 1:
         try:
             param = int(sys.argv[1])
-            if 0 < param <= 1:
+            if 0 < param <= 3:
                 select = param
         except:
             pass
     if 1 == select:
         screen_welcome = ScreenWelcome()
         screen_welcome.draw()
+    elif 2 == select:
+        game = logic.Game.build_fake_game()
+        screen_setup = ScreenSetup(game.players)
+        screen_setup.draw()
+    elif 3 == select:
+        game = logic.Game()
+        screen_setup = ScreenSetup(game.players)
+        screen_setup.draw()
     M5.update()
 
 

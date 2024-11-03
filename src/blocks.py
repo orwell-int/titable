@@ -6,12 +6,30 @@ from M5 import Lcd
 from M5 import Widgets
 
 
+class Visible:
+    def __init__(
+        self,
+    ):
+        self._visible = True
+        self._changed = True
+
+    def hide(self):
+        if self._visible:
+            self._visible = False
+            self._changed = False
+
+    def show(self):
+        if not self._visible:
+            self._visible = True
+            self._changed = True
+
+
 class Decoration:
     def has_colours(self):
         return False
 
 
-class DecorationText(Decoration):
+class DecorationText(Visible, Decoration):
     def __init__(
         self,
         text,
@@ -28,31 +46,18 @@ class DecorationText(Decoration):
         self._text_colour = text_colour
         self._fill_colour = fill_colour
         self._font = font
-        self._visible = True
-        self._changed = True
-
-    def hide(self):
-        if self._visible:
-            self._visible = False
-            self._changed = True
-
-    def show(self):
-        if not self._visible:
-            self._visible = True
-            self._changed = True
 
     def draw(self):
+        if not self._visible:
+            return
         if self._changed:
             Lcd.setFont(self._font)
             width = Lcd.textWidth(self._text)
             height = Lcd.fontHeight()
             tx = self._cx - width // 2
             ty = self._cy - height // 2
-            if self._visible:
-                Lcd.setTextColor(self._text_colour.hexa, self._fill_colour.hexa)
-                Lcd.drawString(self._text, tx, ty)
-            else:
-                Lcd.fillRect(tx, ty, width, height, colours.BLACK)
+            Lcd.setTextColor(self._text_colour.hexa, self._fill_colour.hexa)
+            Lcd.drawString(self._text, tx, ty)
             self._changed = False
 
     @property
@@ -89,7 +94,7 @@ class DecorationText(Decoration):
         return True
 
 
-class DecorationImage(Decoration):
+class DecorationImage(Visible, Decoration):
     def __init__(self, path, x, y):
         super().__init__()
         self._path = path
@@ -110,14 +115,14 @@ class AlignmentVertical:
     BOTTOM = 2
 
 
-class Line:
+class Line(Visible):
     def __init__(self, x1: int, y1: int, x2: int, y2: int, colour: Colour):
+        super().__init__()
         self._x1 = x1
         self._y1 = y1
         self._x2 = x2
         self._y2 = y2
         self._colour = colour
-        self._changed = True
 
     @property
     def colour(self):
@@ -132,12 +137,14 @@ class Line:
         self._changed = True
 
     def draw(self):
+        if not self._visible:
+            return
         if self._changed:
             Lcd.drawLine(self._x1, self._y1, self._x2, self._y2, self._colour.hexa)
             self._changed = False
 
 
-class Rectangle:
+class Rectangle(Visible):
     def __init__(
         self,
         x: int,
@@ -152,6 +159,7 @@ class Rectangle:
         border_colour: Colour = colours.WHITE,
         font: int = Widgets.FONTS.DejaVu12,
     ):
+        super().__init__()
         self.x = x
         self.y = y
         self.dx = dx
@@ -174,7 +182,6 @@ class Rectangle:
             )
         else:
             self.decoration_text = None
-        self._changed = True
 
     @property
     def text(self):
@@ -225,6 +232,8 @@ class Rectangle:
         return self.__repr__()
 
     def draw(self):
+        if not self._visible:
+            return
         if self._changed:
             Lcd.drawRect(self.x, self.y, self.dx, self.dy, self._border_colour.hexa)
             Lcd.fillRect(
@@ -238,7 +247,7 @@ class Rectangle:
                 self.decoration_text.draw()
 
 
-class ButtonRectangle:
+class ButtonRectangle(Visible):
     def __init__(
         self,
         x: int,
@@ -255,6 +264,7 @@ class ButtonRectangle:
         disabled_fill_colour: Colour = None,
         disabled_border_colour: Colour = None,
     ):
+        super().__init__()
         self.x = x
         self.y = y
         self.dx = dx
@@ -285,6 +295,13 @@ class ButtonRectangle:
     @property
     def text(self):
         return self._text
+
+    @text.setter
+    def text(self, text):
+        if self._text != text:
+            self._text = text
+            if self.decoration_text:
+                self.decoration_text.text = text
 
     @property
     def text_colour(self):
@@ -369,6 +386,8 @@ class ButtonRectangle:
             self.enabled = value
 
     def draw(self):
+        if not self._visible:
+            return
         if self._changed:
             Lcd.drawRect(
                 self.x, self.y, self.dx, self.dy, self._current_border_colour.hexa
@@ -382,6 +401,11 @@ class ButtonRectangle:
             )
             self.decoration_text.draw()
 
+    def notify(self, key, value):
+        if 'name' == key:
+            self.text = value
+        elif 'colour' == key:
+            self.fill_colour = value
 
 def main():
     M5.begin()

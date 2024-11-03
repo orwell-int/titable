@@ -62,7 +62,7 @@ class Game:
         round: int = 0,
         phase: int = PHASE_STRATEGY,
         available_strategies: dict = None,
-        players: dict = None,
+        players: list = None,
         available_colours: set[Colour] = None,
     ):
         self._num_players = num_players
@@ -122,6 +122,11 @@ class Game:
             return self._players[num - 1]
         except IndexError:
             return None
+
+    # may not be a good idea
+    @property
+    def players(self):
+        return self._players
 
     @property
     def num_players(self):
@@ -205,6 +210,43 @@ class Game:
     def __str__(self):
         return self.__repr__()
 
+    @staticmethod
+    def build_fake_game(do_print=False):
+        game = Game()
+        if do_print:
+            print(repr(game))
+
+        player = game.get_player(5)
+        player.name = "Florent"
+        player.colour = colours.PLAYER_RED
+
+        player = game.get_player(2)
+        player.name = "Pierre"
+        try:
+            player.colour = colours.PLAYER_RED
+        except Exception as e:
+            print("Red already taken:", e)
+        player.colour = colours.PLAYER_BLACK
+
+        player = game.get_player(4)
+        player.name = "Shizu"
+        player.colour = colours.PLAYER_GREEN
+
+        player = game.get_player(6)
+        player.name = "Julie"
+        player.colour = colours.PLAYER_ORANGE
+
+        player = game.get_player(1)
+        player.name = "Michael"
+        player.colour = colours.PLAYER_PURPLE
+
+        player = game.get_player(3)
+        player.name = "Romain"
+        player.colour = colours.PLAYER_BLUE
+
+        game.set_speaker(3)
+        return game
+
 
 class Player:
     # FACTION_NOT_IMPLEMENTED = 0
@@ -227,6 +269,22 @@ class Player:
         self._has_passed = has_passed
         self._has_played_strategy = has_played_strategy
         self._strategy = strategy
+        self._observers_name = []
+        self._observers_colour = []
+
+    def add_observer_name(self, observer):
+        if observer not in self._observers_name:
+            self._observers_name.append(observer)
+
+    def add_observer_colour(self, observer):
+        if observer not in self._observers_colour:
+            self._observers_colour.append(observer)
+
+    def remove_observer_name(self, observer):
+        self._observers_name.remover(observer)
+
+    def remove_observer_colour(self, observer):
+        self._observers_colour.remover(observer)
 
     def set_game(self, game):
         self._game = game
@@ -239,6 +297,17 @@ class Player:
         self._score += delta
 
     @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        self._name = name
+        if self._observers_name:
+            for observer in self._observers_name:
+                observer.notify('name', name)
+
+    @property
     def colour(self):
         return self._colour
 
@@ -246,6 +315,9 @@ class Player:
     def colour(self, colour):
         self._game.pick_colour(colour)
         self._colour = colour
+        if self._observers_colour:
+            for observer in self._observers_colour:
+                observer.notify('colour', colour)
 
     def can_play(self):
         phase = self._game.phase
@@ -283,38 +355,7 @@ class Player:
 
 
 def main():
-    game = Game()
-    print(repr(game))
-
-    player = game.get_player(5)
-    player.name = "Florent"
-    player.colour = colours.PLAYER_RED
-
-    player = game.get_player(2)
-    player.name = "Pierre"
-    try:
-        player.colour = colours.PLAYER_RED
-    except Exception as e:
-        print("Red already taken:", e)
-    player.colour = colours.PLAYER_BLACK
-
-    player = game.get_player(4)
-    player.name = "Shizu"
-    player.colour = colours.PLAYER_GREEN
-
-    player = game.get_player(6)
-    player.name = "Julie"
-    player.colour = colours.PLAYER_ORANGE
-
-    player = game.get_player(1)
-    player.name = "Michael"
-    player.colour = colours.PLAYER_PURPLE
-
-    player = game.get_player(3)
-    player.name = "Romain"
-    player.colour = colours.PLAYER_BLUE
-
-    game.set_speaker(3)
+    game = Game.build_fake_game(do_print=True)
 
     for player in game._players:
         print(player)
