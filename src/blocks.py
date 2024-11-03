@@ -1,6 +1,7 @@
 from colours import Colour
 import colours
 
+import M5
 from M5 import Lcd
 from M5 import Widgets
 
@@ -249,6 +250,7 @@ class ButtonRectangle:
 
 
 def main():
+    M5.begin()
     dx = 4
     dy = 4
     width = 85
@@ -291,7 +293,8 @@ def main():
             )
             button.draw()
             print(button)
-    pass
+
+    M5.update()
 
 
 if "__main__" == __name__:

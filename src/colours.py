@@ -76,6 +76,15 @@ class Colour:
         return (self.r << 16) + (self.g << 8) + self.b
 
 
+def rgb(hexa_value: int):
+    r = hexa_value >> 16
+    hexa_value -= r << 16
+    g = hexa_value >> 8
+    b = hexa_value - (g << 8)
+    result = (r, g, b)
+    return result
+
+
 WHITE = Colour(255, 255, 255)
 WHITE.pretty_name = "white"
 BLACK = Colour(0, 0, 0)
