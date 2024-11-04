@@ -229,6 +229,143 @@ class ScreenSetup(Screen):
             rectangle.draw()
 
 
+class LetterLoop:
+    def __init__(self, offset: int, start_index: int = 0):
+        self._letters = [chr(ord("A") + ((i + offset) % 26)) for i in range(26)]
+        self._index = start_index
+
+    def __getitem__(self, index):
+        if index in (-1, 0, 1):
+            specific_index = self._index + index
+            adjusted_index = specific_index % 26
+            return self._letters[adjusted_index]
+        else:
+            raise Exception(f"Only -1, 0 or 1 allowed but index = {index}")
+
+    def increment(self):
+        self._index = (self._index + 1) % 26
+
+    def decrement(self):
+        self._index = (self._index - 1) % 26
+
+
+class ScreenSetupName(Screen):
+    """
+    The custom part should look like this
+    <---------- INNER_X ---------->
+    +-----+-----+-----+-----+-----+   ^
+    |     |     |     |     |     |   |
+    |     |  A  |  B  |  C  |     |   |
+    |     |     |     |     |     |   |
+    +     +     +     +     +     +   |
+    |     |     |     |     |     |
+    |  <  |  L  |  M  |  N  |  >  | INNER_Y
+    |     |     |     |     |     |
+    +     +     +     +     +     +   |
+    |     |     |     |     |     |   |
+    |     |  T  |  U  |  V  |     |   |
+    |     |     |     |     |     |   |
+    +-----+-----+-----+-----+-----+   v
+    Offset for the three lines found using:
+    ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    LMNOPQRSTUVWXYZABCDEFGHIJK
+    TUVWXYZABCDEFGHIJKLMNOPQRS
+    """
+
+    def __init__(self, players: list[Player], player_index: int):
+        super().__init__("setup name", players[player_index].name + "_", colours.WHITE)
+        button_font = Widgets.FONTS.DejaVu24
+        rectangle_font = Widgets.FONTS.DejaVu18
+        letters_by_line = [
+            LetterLoop(0),
+            LetterLoop(11),
+            LetterLoop(19),
+        ]
+        num_columns = 5
+        num_lines = 3
+        item_sx = (INNER_X + 1) // num_columns + 1
+        item_sy = (INNER_Y + 1) // num_lines + 1
+        self._button_left = blocks.ButtonRectangle(
+            LEFT_BAR_WIDTH,
+            TITLE_HEIGHT,
+            item_sx,
+            INNER_Y + 1,
+            "<<<",
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+        x = LEFT_BAR_WIDTH + 4 * (item_sx - 1)
+        self._button_right = blocks.ButtonRectangle(
+            x,
+            TITLE_HEIGHT,
+            MAX_X - x,
+            INNER_Y + 1,
+            ">>>",
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+        self._buttons = []
+        self._rectangles = []
+        for line in range(num_lines):
+            last_line = line == (num_lines - 1)
+            letter_line = letters_by_line[line]
+            for column in range(1, num_columns - 1):
+                letter_index = column - 2
+                letter = letter_line[letter_index]
+                is_button = column == 2
+                x = LEFT_BAR_WIDTH + (item_sx - 1) * column
+                y = TITLE_HEIGHT + (item_sy - 1) * line
+                sx = item_sx
+                sy = MAX_Y - y if (last_line) else item_sy
+                if is_button:
+                    button = blocks.ButtonRectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        letter,
+                        colours.PALETTE_LIGHT_GREEN,
+                        Screen.COLOUR_BORDER,
+                        button_font,
+                    )
+                    self._buttons.append(button)
+                else:
+                    rectangle = blocks.Rectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        letter,
+                        colours.PALETTE_DARK_BLUE,
+                        Screen.COLOUR_BORDER,
+                        rectangle_font,
+                    )
+                    self._rectangles.append(rectangle)
+        x = LEFT_BAR_WIDTH // 2
+        y = MAX_Y - x
+        self._button_erase = blocks.ButtonCircle(
+            x,
+            y,
+            x - 4,
+            "<|",
+            colours.PALETTE_LIGHT_GREEN,
+            colours.PALETTE_LIGHT_GREEN,
+            # Screen.COLOUR_BORDER,
+        )
+
+    def draw(self):
+        super().draw()
+        self._button_erase.draw()
+        self._button_left.draw()
+        self._button_right.draw()
+        for button in self._buttons:
+            button.draw()
+        for rectangle in self._rectangles:
+            rectangle.draw()
+
+
 def main():
     import sys
     import M5
@@ -239,7 +376,7 @@ def main():
     if len(sys.argv) > 1:
         try:
             param = int(sys.argv[1])
-            if 0 < param <= 3:
+            if 0 < param <= 5:
                 select = param
         except:
             pass
@@ -253,6 +390,14 @@ def main():
     elif 3 == select:
         game = logic.Game()
         screen_setup = ScreenSetup(game.players)
+        screen_setup.draw()
+    elif 4 == select:
+        game = logic.Game.build_fake_game()
+        screen_setup = ScreenSetupName(game.players, 2)
+        screen_setup.draw()
+    elif 5 == select:
+        game = logic.Game()
+        screen_setup = ScreenSetupName(game.players, 2)
         screen_setup.draw()
     M5.update()
 
