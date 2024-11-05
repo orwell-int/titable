@@ -2,6 +2,9 @@ import colours
 from colours import Colour
 
 
+USE_UNICODE = False
+
+
 class Strategies:
     NONE = 0
     LEADERSHIP = 1
@@ -41,6 +44,33 @@ class Strategies:
     @staticmethod
     def to_string(strategy: int):
         return Strategies[strategy]
+
+    @staticmethod
+    def to_short_string(strategy: int):
+        if 0 == strategy:
+            return ""
+        global USE_UNICODE
+        if 1 <= strategy <= 8:
+            if USE_UNICODE:
+                if 1 == strategy:
+                    return "\u2460"
+                if 2 == strategy:
+                    return "\u2461"
+                if 3 == strategy:
+                    return "\u2462"
+                if 4 == strategy:
+                    return "\u2463"
+                if 5 == strategy:
+                    return "\u2464"
+                if 6 == strategy:
+                    return "\u2465"
+                if 7 == strategy:
+                    return "\u2466"
+                if 8 == strategy:
+                    return "\u2467"
+            else:
+                return str(strategy)
+        raise Exception(f"Invalid value for a strategy: {strategy}")
 
 
 class Game:
@@ -140,6 +170,14 @@ class Game:
     @property
     def phase(self):
         return self._phase
+
+    @property
+    def turn(self):
+        return self._turn
+
+    @property
+    def round(self):
+        return self._round
 
     def switch_state(self, new_state):
         self._state = new_state
@@ -336,7 +374,12 @@ class Player:
     def is_speaker(self):
         return self._game.is_speaker(self.num)
 
-    def set_strategy(self, strategy: int):
+    @property
+    def strategy(self):
+        return self._strategy
+
+    @strategy.setter
+    def strategy(self, strategy: int):
         self._strategy = strategy
         self._has_played_strategy = False
 
@@ -362,17 +405,17 @@ def main():
 
     game.start_playing()
     player = game.get_next_player()
-    player.set_strategy(Strategies.WARFARE)
+    player.strategy = Strategies.WARFARE
     player = game.get_next_player()
-    player.set_strategy(Strategies.TECHNOLOGY)
+    player.strategy = Strategies.TECHNOLOGY
     player = game.get_next_player()
-    player.set_strategy(Strategies.TRADE)
+    player.strategy = Strategies.TRADE
     player = game.get_next_player()
-    player.set_strategy(Strategies.LEADERSHIP)
+    player.strategy = Strategies.LEADERSHIP
     player = game.get_next_player()
-    player.set_strategy(Strategies.CONSTRUCTION)
+    player.strategy = Strategies.CONSTRUCTION
     player = game.get_next_player()
-    player.set_strategy(Strategies.POLITICS)
+    player.strategy = Strategies.POLITICS
 
     print(repr(game))
 

@@ -21,7 +21,7 @@ class Colour:
         b = int(hexa[4:6], 16)
         return Colour(r, g, b)
 
-    def _build_different(self, v, perceived_lightness, factor=0.5):
+    def _build_different(self, v, perceived_lightness, factor=0.8):
         if not (0.0 < factor < 1.0):
             raise Exception(
                 f"_build_different: factor must be in ]0.0 .. 1.0[ but is {factor}"
@@ -34,7 +34,7 @@ class Colour:
             v = 0 + int(delta * factor)
         return v
 
-    def build_different(self, factor=0.5):
+    def build_different(self, factor=0.8):
         perceived_lightness = self.get_perceived_lightness()
         return Colour(
             self._build_different(self.r, perceived_lightness, factor),

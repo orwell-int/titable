@@ -246,6 +246,10 @@ class Rectangle(Visible):
             if self.decoration_text:
                 self.decoration_text.draw()
 
+    @property
+    def center(self):
+        return self.x + self.dx // 2, self.y + self.dy // 2
+
 
 class ButtonRectangle(Visible):
     def __init__(
@@ -278,7 +282,7 @@ class ButtonRectangle(Visible):
         self._disabled_fill_colour = disabled_fill_colour
         self._disabled_border_colour = disabled_border_colour
         self._text_colour = self._fill_colour.get_contrasting_text()
-        self._disabled_text_colour = self._text_colour.build_different(0.8)
+        self._disabled_text_colour = self._text_colour.build_different()
         self._current_fill_colour = self._fill_colour
         self._current_border_colour = self._border_colour
         self.decoration_text = DecorationText(
@@ -402,6 +406,10 @@ class ButtonRectangle(Visible):
                 self._current_fill_colour.hexa,
             )
             self.decoration_text.draw()
+
+    @property
+    def center(self):
+        return self.x + self.dx // 2, self.y + self.dy // 2
 
     def notify(self, key, value):
         if "name" == key:

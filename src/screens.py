@@ -2,6 +2,8 @@ from colours import Colour
 import colours
 import blocks
 from logic import Player
+from logic import Strategies
+import logic
 
 from M5 import Widgets
 
@@ -58,6 +60,7 @@ class Screen:
             self.title_colour = title_colour
         else:
             self.title_colour = side_colour.get_contrasting_text()
+        self._side_colour = side_colour
         self.title_rectangle = blocks.Rectangle(
             1,
             1,
@@ -114,6 +117,73 @@ class Screen:
         if self.return_button:
             self.return_button.draw()
 
+    def _create_grid_players(self, button_font, players):
+        num_columns = 2
+        num_lines = 3
+        button_sx = (INNER_X + 2) // num_columns
+        button_sy = (INNER_Y + 2) // num_lines
+        num_players = len(players)
+        buttons = []
+        rectangles = []
+        for line in range(num_lines):
+            last_line = line == (num_lines - 1)
+            for column in range(num_columns):
+                last_column = column == (num_columns - 1)
+                index = column + line * num_columns
+                x = LEFT_BAR_WIDTH + (button_sx - 1) * column
+                y = TITLE_HEIGHT + (button_sy - 1) * line
+                sx = MAX_X - x if (last_column) else button_sx
+                sy = MAX_Y - y if (last_line) else button_sy
+                if index < num_players:
+                    player = players[index]
+                    button = blocks.ButtonRectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        f"{player.name}",
+                        player.colour,
+                        Screen.COLOUR_BORDER,
+                        button_font,
+                    )
+                    buttons.append(button)
+                else:
+                    rectangle = blocks.Rectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        None,
+                        colours.WHITE,
+                        Screen.COLOUR_BORDER,
+                    )
+                    rectangles.append(rectangle)
+        return (buttons, rectangles)
+
+    def _create_text_turn(self):
+        cx = LEFT_BAR_WIDTH // 2
+        cy = MAX_Y // 2 - 20
+        return blocks.DecorationText(
+            "",
+            cx,
+            cy,
+            self.title_colour,
+            self._side_colour,
+            font=Widgets.FONTS.DejaVu18,
+        )
+
+    def _create_text_round(self):
+        cx = LEFT_BAR_WIDTH // 2
+        cy = MAX_Y // 2 + 20
+        return blocks.DecorationText(
+            "",
+            cx,
+            cy,
+            self.title_colour,
+            self._side_colour,
+            font=Widgets.FONTS.DejaVu18,
+        )
+
 
 class ScreenWelcome(Screen):
     def __init__(self):
@@ -167,6 +237,7 @@ class ScreenWelcome(Screen):
 class ScreenSetup(Screen):
     def __init__(self, players: list[Player]):
         super().__init__("setup", None, colours.WHITE)
+        self._players = players
         button_font = Widgets.FONTS.DejaVu18
         dy = 4
         top_button_sy = TITLE_HEIGHT - dy * 2
@@ -183,46 +254,9 @@ class ScreenSetup(Screen):
             # Screen.COLOUR_BORDER,
             button_font,
         )
-        num_columns = 2
-        num_lines = 3
-        button_sx = (INNER_X + 2) // num_columns
-        button_sy = (INNER_Y + 2) // num_lines
-        num_players = len(players)
-        self._buttons = []
-        self._rectangles = []
-        for line in range(num_lines):
-            last_line = line == (num_lines - 1)
-            for column in range(num_columns):
-                last_column = column == (num_columns - 1)
-                index = column + line * num_columns
-                x = LEFT_BAR_WIDTH + (button_sx - 1) * column
-                y = TITLE_HEIGHT + (button_sy - 1) * line
-                sx = MAX_X - x if (last_column) else button_sx
-                sy = MAX_Y - y if (last_line) else button_sy
-                if index < num_players:
-                    player = players[index]
-                    button = blocks.ButtonRectangle(
-                        x,
-                        y,
-                        sx,
-                        sy,
-                        f"{player.name}",
-                        player.colour,
-                        Screen.COLOUR_BORDER,
-                        button_font,
-                    )
-                    self._buttons.append(button)
-                else:
-                    rectangle = blocks.Rectangle(
-                        x,
-                        y,
-                        sx,
-                        sy,
-                        None,
-                        colours.WHITE,
-                        Screen.COLOUR_BORDER,
-                    )
-                    self._rectangles.append(rectangle)
+        self._buttons, self._rectangles = self._create_grid_players(
+            button_font, players
+        )
 
     def draw(self):
         super().draw()
@@ -448,6 +482,68 @@ class ScreenSetupColour(Screen):
         self._center_control.draw()
 
 
+class ScreenStrategy(Screen):
+    def __init__(self, game: logic.Game):
+        super().__init__("strategy", None, colours.WHITE)
+        self._game = game
+        self._players = game.players
+        button_font = Widgets.FONTS.DejaVu18
+        dy = 4
+        top_button_sy = TITLE_HEIGHT - dy * 2
+        top_button_sx = 180
+        delta_x = (MAX_X - LEFT_BAR_WIDTH - top_button_sx) // 2
+        self._button_end_phase = blocks.ButtonRectangle(
+            LEFT_BAR_WIDTH + delta_x,
+            dy,
+            top_button_sx,
+            top_button_sy,
+            "End strategy phase",
+            colours.PALETTE_LIGHT_GREEN,
+            colours.PALETTE_LIGHT_GREEN,
+            # Screen.COLOUR_BORDER,
+            button_font,
+        )
+        self._buttons, self._rectangles = self._create_grid_players(
+            button_font, self._players
+        )
+        self._text_turn = self._create_text_turn()
+        # self._text_round = self._create_text_round()
+        self._text_strategies = []
+        for button, player in zip(self._buttons, self._players):
+            cx, cy = button.center
+            text = Strategies.to_short_string(player.strategy)
+            text_strategy = blocks.DecorationText(
+                text,
+                cx,
+                cy + 20,
+                button.text_colour,
+                button.fill_colour,
+                font=Widgets.FONTS.DejaVu18,
+            )
+            self._text_strategies.append(text_strategy)
+        self.update()
+
+    def update(self):
+        all_selected = all(
+            [player.strategy != Strategies.NONE for player in self._players]
+        )
+        self._button_end_phase.enabled = all_selected
+        self._text_turn.text = f"T {self._game.turn}"
+        # self._text_round.text = f"R {self._game.round}"
+
+    def draw(self):
+        super().draw()
+        self._button_end_phase.draw()
+        for button in self._buttons:
+            button.draw()
+        for rectangle in self._rectangles:
+            rectangle.draw()
+        for text_strategy in self._text_strategies:
+            text_strategy.draw()
+        self._text_turn.draw()
+        # self._text_round.draw()
+
+
 def main():
     import sys
     import M5
@@ -458,7 +554,7 @@ def main():
     if len(sys.argv) > 1:
         try:
             param = int(sys.argv[1])
-            if 0 < param <= 8:
+            if 0 < param <= 10:
                 select = param
         except:
             pass
@@ -495,6 +591,19 @@ def main():
         player.name = "Pierre"
         player.colour = colours.PLAYER_BLACK
         screen_setup_colour = ScreenSetupColour(game.players, 4)
+        screen_setup_colour.draw()
+    elif 9 == select:
+        game = logic.Game.build_fake_game()
+        screen_setup_colour = ScreenStrategy(game)
+        screen_setup_colour.draw()
+    elif 10 == select:
+        game = logic.Game.build_fake_game()
+        game.start_playing()
+        player = game.get_next_player()
+        player.strategy = Strategies.WARFARE
+        player = game.get_next_player()
+        player.strategy = Strategies.TECHNOLOGY
+        screen_setup_colour = ScreenStrategy(game)
         screen_setup_colour.draw()
     M5.update()
 
