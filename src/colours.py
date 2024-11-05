@@ -21,20 +21,25 @@ class Colour:
         b = int(hexa[4:6], 16)
         return Colour(r, g, b)
 
-    def _build_different(self, v):
-        if v < 128:
+    def _build_different(self, v, perceived_lightness, factor=0.5):
+        if not (0.0 < factor < 1.0):
+            raise Exception(
+                f"_build_different: factor must be in ]0.0 .. 1.0[ but is {factor}"
+            )
+        if perceived_lightness < 50:
             delta = 255 - v
-            v = 255 - delta // 2
+            v = 255 - int(delta * factor)
         else:
             delta = v - 0
-            v = 0 + delta // 2
+            v = 0 + int(delta * factor)
         return v
 
-    def build_different(self):
+    def build_different(self, factor=0.5):
+        perceived_lightness = self.get_perceived_lightness()
         return Colour(
-            self._build_different(self.r),
-            self._build_different(self.g),
-            self._build_different(self.b),
+            self._build_different(self.r, perceived_lightness, factor),
+            self._build_different(self.g, perceived_lightness, factor),
+            self._build_different(self.b, perceived_lightness, factor),
         )
 
     def _linearize(self, v):
@@ -120,6 +125,17 @@ PLAYER_RED = Colour(169, 34, 34)
 PLAYER_RED.pretty_name = "player red"
 PLAYER_YELLOW = Colour(254, 230, 25)
 PLAYER_YELLOW.pretty_name = "player yellow"
+
+PLAYER_COLOURS = [
+    PLAYER_BLACK,
+    PLAYER_BLUE,
+    PLAYER_GREEN,
+    PLAYER_ORANGE,
+    PLAYER_PINK,
+    PLAYER_PURPLE,
+    PLAYER_RED,
+    PLAYER_YELLOW,
+]
 
 PALETTE_DARK_BLUE = Colour.from_hexa_str("192B48")
 PALETTE_DARK_BLUE.pretty_name = "oxford blue"

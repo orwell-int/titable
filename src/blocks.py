@@ -278,7 +278,7 @@ class ButtonRectangle(Visible):
         self._disabled_fill_colour = disabled_fill_colour
         self._disabled_border_colour = disabled_border_colour
         self._text_colour = self._fill_colour.get_contrasting_text()
-        self._disabled_text_colour = self._text_colour.build_different()
+        self._disabled_text_colour = self._text_colour.build_different(0.8)
         self._current_fill_colour = self._fill_colour
         self._current_border_colour = self._border_colour
         self.decoration_text = DecorationText(
@@ -360,8 +360,9 @@ class ButtonRectangle(Visible):
     def enabled(self):
         return self._enabled
 
-    @border_colour.setter
+    @enabled.setter
     def enabled(self, value):
+        print(f"ButtonRectangle.enabled <= {value} (was {self._enabled})")
         if self._enabled != value:
             self._enabled = value
             if self._enabled:
@@ -370,6 +371,8 @@ class ButtonRectangle(Visible):
                 self.decoration_text.text_colour = self._text_colour
                 self.decoration_text.fill_colour = self._fill_colour
             else:
+                print("disable button rectangle")
+                print(self)
                 if self._disabled_fill_colour is None:
                     disabled_fill_colour = self._fill_colour.build_different()
                 else:
@@ -521,7 +524,7 @@ class ButtonCircle(Visible):
     def enabled(self):
         return self._enabled
 
-    @border_colour.setter
+    @enabled.setter
     def enabled(self, value):
         if self._enabled != value:
             self._enabled = value

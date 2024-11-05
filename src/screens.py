@@ -49,18 +49,22 @@ class Screen:
         name,
         title,
         title_colour,
+        side_colour=colours.PALETTE_DARK_GREEN,
         has_return=True,
     ):
         self.name = name
         self.title = title
-        self.title_colour = title_colour
+        if title_colour is not None:
+            self.title_colour = title_colour
+        else:
+            self.title_colour = side_colour.get_contrasting_text()
         self.title_rectangle = blocks.Rectangle(
             1,
             1,
             MAX_X - 1,
             TITLE_HEIGHT,
             title,
-            colours.PALETTE_DARK_GREEN,
+            side_colour,
             Screen.COLOUR_BORDER,
         )
         self.left_bar = blocks.Rectangle(
@@ -69,7 +73,7 @@ class Screen:
             LEFT_BAR_WIDTH,
             MAX_Y - TITLE_HEIGHT,
             None,
-            colours.PALETTE_DARK_GREEN,
+            side_colour,
             Screen.COLOUR_BORDER,
         )
         self.line = blocks.Line(
@@ -77,7 +81,7 @@ class Screen:
             TITLE_HEIGHT,
             LEFT_BAR_WIDTH - 1,
             TITLE_HEIGHT,
-            colours.PALETTE_DARK_GREEN,
+            side_colour,
         )
         self.background = blocks.Rectangle(
             LEFT_BAR_WIDTH,
@@ -273,6 +277,8 @@ class ScreenSetupName(Screen):
     """
 
     def __init__(self, players: list[Player], player_index: int):
+        player = players[player_index]
+        super().__init__("setup colour", player.name, player.colour)
         super().__init__("setup name", players[player_index].name + "_", colours.WHITE)
         button_font = Widgets.FONTS.DejaVu24
         rectangle_font = Widgets.FONTS.DejaVu18
@@ -366,6 +372,82 @@ class ScreenSetupName(Screen):
             rectangle.draw()
 
 
+class ScreenSetupColour(Screen):
+    def __init__(self, players: list[Player], player_index: int):
+        colours_to_players = {}
+        for player in players:
+            if player.colour != colours.PLAYER_BLANK:
+                colours_to_players[player.colour] = player
+        can_swap = len(colours_to_players) == len(players)
+        player = players[player_index]
+        super().__init__(
+            "setup colour", player.name, title_colour=None, side_colour=player.colour
+        )
+        button_font = Widgets.FONTS.DejaVu18
+        num_columns = 3
+        num_lines = 3
+        dx = 4
+        dy = 4
+        sx = (INNER_X - (1 + num_columns) * dx) // num_columns  # ~ 85
+        sy = (INNER_Y - (1 + num_lines) * dy) // num_lines  # ~ 65
+        self._buttons = []
+        self._center_control = None
+        index = 0
+        for column in range(num_columns):
+            for line in range(num_lines):
+                disable = False
+                is_colour = not ((line == 1) and (column == 1))
+                if is_colour:
+                    colour = colours.PLAYER_COLOURS[index]
+                    is_button = True
+                    if colour in colours_to_players:
+                        text = colours_to_players[colour].name
+                        disable = not can_swap
+                    else:
+                        text = colour.pretty_name[len("player ") :]
+                        disable = can_swap
+                    index += 1
+                else:
+                    colour = colours.PLAYER_BLANK
+                    if can_swap:
+                        text = "swap"
+                    else:
+                        text = "back"
+                    is_button = can_swap
+                if is_button:
+                    control = blocks.ButtonRectangle(
+                        LEFT_BAR_WIDTH + dx + (dx + sx) * column,
+                        TITLE_HEIGHT + dy + (dy + sy) * line,
+                        sx,
+                        sy,
+                        text,
+                        colour,
+                        Screen.COLOUR_BORDER,
+                    )
+                    if disable:
+                        control.enabled = False
+                else:
+                    control = blocks.Rectangle(
+                        LEFT_BAR_WIDTH + dx + (dx + sx) * column,
+                        TITLE_HEIGHT + dy + (dy + sy) * line,
+                        sx,
+                        sy,
+                        text,
+                        colour,
+                        Screen.COLOUR_BORDER,
+                    )
+                if is_colour:
+                    self._buttons.append(control)
+                else:
+                    self._center_control = control
+
+    def draw(self):
+        super().draw()
+        for button in self._buttons:
+            button.draw()
+        self._center_control.draw()
+
+
 def main():
     import sys
     import M5
@@ -376,7 +458,7 @@ def main():
     if len(sys.argv) > 1:
         try:
             param = int(sys.argv[1])
-            if 0 < param <= 5:
+            if 0 < param <= 8:
                 select = param
         except:
             pass
@@ -393,12 +475,27 @@ def main():
         screen_setup.draw()
     elif 4 == select:
         game = logic.Game.build_fake_game()
-        screen_setup = ScreenSetupName(game.players, 2)
-        screen_setup.draw()
+        screen_setup_name = ScreenSetupName(game.players, 2)
+        screen_setup_name.draw()
     elif 5 == select:
         game = logic.Game()
-        screen_setup = ScreenSetupName(game.players, 2)
-        screen_setup.draw()
+        screen_setup_name = ScreenSetupName(game.players, 2)
+        screen_setup_name.draw()
+    elif 6 == select:
+        game = logic.Game.build_fake_game()
+        screen_setup_colour = ScreenSetupColour(game.players, 4)
+        screen_setup_colour.draw()
+    elif 7 == select:
+        game = logic.Game()
+        screen_setup_colour = ScreenSetupColour(game.players, 4)
+        screen_setup_colour.draw()
+    elif 8 == select:
+        game = logic.Game()
+        player = game.get_player(2)
+        player.name = "Pierre"
+        player.colour = colours.PLAYER_BLACK
+        screen_setup_colour = ScreenSetupColour(game.players, 4)
+        screen_setup_colour.draw()
     M5.update()
 
 
