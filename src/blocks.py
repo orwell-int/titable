@@ -47,6 +47,17 @@ class DecorationText(Visible, Decoration):
         self._fill_colour = fill_colour
         self._font = font
 
+    def __repr__(self):
+        string = f"DecorationText(text={self._text}, "
+        string += f"cx={self._cx}, cy={self._cy}, "
+        string += f"text_colour={self._text_colour}, "
+        string += f"fill_colour={self._fill_colour}, "
+        string += f"font={self._font})"
+        return string
+
+    def __str__(self):
+        return self.__repr__()
+
     def draw(self):
         if not self._visible:
             return

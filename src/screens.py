@@ -43,6 +43,49 @@ INNER_X = MAX_X - LEFT_BAR_WIDTH - 1
 INNER_Y = MAX_Y - TITLE_HEIGHT - 1
 
 
+class SillyText:
+    def __init__(self):
+        self._text = None
+
+    def _set_text(self, text):
+        self._text.text = text
+
+    text = property(fset=_set_text)
+
+    del _set_text
+
+    def draw(self):
+        self._text.draw()
+
+
+class TextRound(SillyText):
+    def __init__(self, text_colour, fill_colour):
+        cx = LEFT_BAR_WIDTH // 2
+        cy = MAX_Y // 2 - 20
+        self._text = blocks.DecorationText(
+            "",
+            cx,
+            cy,
+            text_colour,
+            fill_colour,
+            font=Widgets.FONTS.DejaVu18,
+        )
+
+
+class TextTurn(SillyText):
+    def __init__(self, text_colour, fill_colour):
+        cx = LEFT_BAR_WIDTH // 2
+        cy = MAX_Y // 2 + 20
+        self._text = blocks.DecorationText(
+            "",
+            cx,
+            cy,
+            text_colour,
+            fill_colour,
+            font=Widgets.FONTS.DejaVu18,
+        )
+
+
 class Screen:
     COLOUR_BORDER = colours.PALETTE_GOLD
 
@@ -51,8 +94,11 @@ class Screen:
         name,
         title,
         title_colour,
-        side_colour=colours.PALETTE_DARK_GREEN,
+        side_colour=None,
         has_return=True,
+        game=None,
+        has_round=False,
+        has_turn=False,
     ):
         self.name = name
         self.title = title
@@ -60,6 +106,8 @@ class Screen:
             self.title_colour = title_colour
         else:
             self.title_colour = side_colour.get_contrasting_text()
+        if side_colour is None:
+            side_colour = colours.PALETTE_DARK_GREEN
         self._side_colour = side_colour
         self.title_rectangle = blocks.Rectangle(
             1,
@@ -108,6 +156,27 @@ class Screen:
             )
         else:
             self.return_button = None
+        if has_round:
+            self._text_round = TextRound(
+                self.title_colour,
+                self._side_colour,
+            )
+        else:
+            self._text_round = None
+        if has_turn:
+            self._text_turn = TextTurn(
+                self.title_colour,
+                self._side_colour,
+            )
+        else:
+            self._text_turn = None
+        self._game = game
+
+    def update(self):
+        if self._text_round:
+            self._text_round.text = f"R {self._game.round}"
+        if self._text_turn:
+            self._text_turn.text = f"T {self._game.turn}"
 
     def draw(self):
         self.title_rectangle.draw()
@@ -116,6 +185,10 @@ class Screen:
         self.background.draw()
         if self.return_button:
             self.return_button.draw()
+        if self._text_round:
+            self._text_round.draw()
+        if self._text_turn:
+            self._text_turn.draw()
 
     def _create_grid_players(self, button_font, players):
         num_columns = 2
@@ -159,30 +232,6 @@ class Screen:
                     )
                     rectangles.append(rectangle)
         return (buttons, rectangles)
-
-    def _create_text_turn(self):
-        cx = LEFT_BAR_WIDTH // 2
-        cy = MAX_Y // 2 - 20
-        return blocks.DecorationText(
-            "",
-            cx,
-            cy,
-            self.title_colour,
-            self._side_colour,
-            font=Widgets.FONTS.DejaVu18,
-        )
-
-    def _create_text_round(self):
-        cx = LEFT_BAR_WIDTH // 2
-        cy = MAX_Y // 2 + 20
-        return blocks.DecorationText(
-            "",
-            cx,
-            cy,
-            self.title_colour,
-            self._side_colour,
-            font=Widgets.FONTS.DejaVu18,
-        )
 
 
 class ScreenWelcome(Screen):
@@ -484,7 +533,9 @@ class ScreenSetupColour(Screen):
 
 class ScreenStrategy(Screen):
     def __init__(self, game: logic.Game):
-        super().__init__("strategy", None, colours.WHITE)
+        super().__init__(
+            "strategy", None, colours.WHITE, side_colour=None, game=game, has_round=True
+        )
         self._game = game
         self._players = game.players
         button_font = Widgets.FONTS.DejaVu18
@@ -506,8 +557,6 @@ class ScreenStrategy(Screen):
         self._buttons, self._rectangles = self._create_grid_players(
             button_font, self._players
         )
-        self._text_turn = self._create_text_turn()
-        # self._text_round = self._create_text_round()
         self._text_strategies = []
         for button, player in zip(self._buttons, self._players):
             cx, cy = button.center
@@ -524,12 +573,11 @@ class ScreenStrategy(Screen):
         self.update()
 
     def update(self):
+        super().update()
         all_selected = all(
             [player.strategy != Strategies.NONE for player in self._players]
         )
         self._button_end_phase.enabled = all_selected
-        self._text_turn.text = f"T {self._game.turn}"
-        # self._text_round.text = f"R {self._game.round}"
 
     def draw(self):
         super().draw()
@@ -540,8 +588,6 @@ class ScreenStrategy(Screen):
             rectangle.draw()
         for text_strategy in self._text_strategies:
             text_strategy.draw()
-        self._text_turn.draw()
-        # self._text_round.draw()
 
 
 class ScreenStrategyPlayer(Screen):
@@ -555,7 +601,13 @@ class ScreenStrategyPlayer(Screen):
                 can_swap = False
         player = game.get_player(player_num)
         super().__init__(
-            "setup colour", player.name, title_colour=None, side_colour=player.colour
+            "setup colour",
+            player.name,
+            title_colour=None,
+            side_colour=player.colour,
+            game=game,
+            has_round=True,
+            has_turn=True,
         )
         self._game = game
         button_font = Widgets.FONTS.DejaVu18
@@ -615,21 +667,87 @@ class ScreenStrategyPlayer(Screen):
                     self._buttons.append(control)
                 else:
                     self._center_control = control
-        self._text_turn = self._create_text_turn()
-        self._text_round = self._create_text_round()
         self.update()
-
-    def update(self):
-        self._text_turn.text = f"T {self._game.turn}"
-        self._text_round.text = f"R {self._game.round}"
 
     def draw(self):
         super().draw()
         for button in self._buttons:
             button.draw()
         self._center_control.draw()
-        self._text_turn.draw()
-        self._text_round.draw()
+
+
+class ScreenAction(Screen):
+    """
+    The custom part should look like this
+    <---------- INNER_X ---------->
+    +-------+---+-----+---+-------+   ^
+    |       |             |       |   |
+    |       |  Strategy   |       |   |
+    |       |    (x)      |       |   |
+    +       +---+-----+---+       +   |
+    |Previou|  Tactical   | Next  |
+    |       |     /       |       | INNER_Y
+    |player |  Component  |player |
+    +       +---+-----+---+       +   |
+    |       |             |       |   |
+    |       |    Pass     |       |   |
+    |       |             |       |   |
+    +-------+---+-----+---+-------+   v
+      2.5         3.0        2.5
+    Maybe a bit of spacing between the buttons if possible.
+    """
+
+    def __init__(self, game: logic.Game):
+        # game.current_player seems better then game.get_player(index)
+        player = game.current_player
+        super().__init__(
+            "action",
+            player.name,
+            title_colour=None,
+            side_colour=player.colour,
+            game=game,
+            has_round=True,
+            has_turn=True,
+        )
+        self._game = game
+        button_font = Widgets.FONTS.DejaVu18
+        x_weight_player_button = 2.5
+        x_weight_action_button = 3
+        x_ratio_player_button = x_weight_player_button / (
+            x_weight_player_button * 2 + x_weight_action_button
+        )
+        player_button_sx = int(x_ratio_player_button * (INNER_X + 1))
+        action_button_sx = (INNER_X + 1) - 2 * player_button_sx
+
+        text_previous = "previous"
+        self._button_previous = blocks.ButtonRectangle(
+            LEFT_BAR_WIDTH,
+            TITLE_HEIGHT,
+            player_button_sx,
+            INNER_Y + 1,
+            text_previous,
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+
+        text_next = "next"
+        self._button_next = blocks.ButtonRectangle(
+            MAX_X - player_button_sx,
+            TITLE_HEIGHT,
+            player_button_sx,
+            INNER_Y + 1,
+            text_next,
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+        self.update()
+
+    def draw(self):
+        super().draw()
+        self._button_previous.draw()
+        self._button_next.draw()
 
 
 def main():
@@ -642,7 +760,7 @@ def main():
     if len(sys.argv) > 1:
         try:
             param = int(sys.argv[1])
-            if 0 < param <= 13:
+            if 0 < param <= 14:
                 select = param
         except:
             pass
@@ -707,7 +825,10 @@ def main():
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategyPlayer(game, player_num=5)
         screen_setup_colour.draw()
-    elif 13 == select:
+    elif select in (
+        13,
+        14,
+    ):
         game = logic.Game.build_fake_game()
         game.start_playing()
         player = game.get_next_player()
@@ -722,8 +843,12 @@ def main():
         player.strategy = Strategies.TRADE
         player = game.get_next_player()
         player.strategy = Strategies.LEADERSHIP
-        screen_setup_colour = ScreenStrategyPlayer(game, player.num)
-        screen_setup_colour.draw()
+        if 13 == select:
+            screen_setup_colour = ScreenStrategyPlayer(game, player.num)
+            screen_setup_colour.draw()
+        elif 14 == select:
+            screen_setup_colour = ScreenAction(game)
+            screen_setup_colour.draw()
     M5.update()
 
 

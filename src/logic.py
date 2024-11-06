@@ -176,12 +176,18 @@ class Game:
         return self._phase
 
     @property
+    def round(self):
+        return self._round
+
+    def _next_round(self):
+        self._turn += 1
+
+    @property
     def turn(self):
         return self._turn
 
-    @property
-    def round(self):
-        return self._round
+    def _next_turn(self):
+        self._turn += 1
 
     def switch_state(self, new_state):
         self._state = new_state
@@ -222,6 +228,16 @@ class Game:
         if Game.PHASE_STRATEGY == self._phase:
             self._end_phase_strategy()
             self._phase = Game.PHASE_ACTION
+        elif Game.PHASE_ACTION == self._phase:
+            self._end_phase_action()
+            self._phase = Game.PHASE_AGENDA
+        elif Game.PHASE_AGENDA == self._phase:
+            self._end_phase_agenda()
+            self._phase = Game.PHASE_STATUS
+        elif Game.PHASE_STATUS == self._phase:
+            self._end_phase_status()
+            self._phase = Game.PHASE_STRATEGY
+            self._next_round()
 
     def get_next_player(self):
         if Game.STATE_PLAY != self._state:
@@ -243,6 +259,10 @@ class Game:
             return player
         elif Game.PHASE_ACTION == self._phase:
             raise Exception("Not implemented yet!")
+
+    @property
+    def current_player(self):
+        return self._players[self._current_player - 1]
 
     def __repr__(self):
         string = f"Game(num_players={self._num_players}, speaker={self._speaker}, "
