@@ -366,7 +366,6 @@ class ButtonRectangle(Visible):
 
     @enabled.setter
     def enabled(self, value):
-        print(f"ButtonRectangle.enabled <= {value} (was {self._enabled})")
         if self._enabled != value:
             self._enabled = value
             if self._enabled:
@@ -375,8 +374,6 @@ class ButtonRectangle(Visible):
                 self.decoration_text.text_colour = self._text_colour
                 self.decoration_text.fill_colour = self._fill_colour
             else:
-                print("disable button rectangle")
-                print(self)
                 if self._disabled_fill_colour is None:
                     disabled_fill_colour = self._fill_colour.build_different()
                 else:

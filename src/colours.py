@@ -147,3 +147,31 @@ PALETTE_LIGHT_GREEN = Colour.from_hexa_str("517A33")
 PALETTE_LIGHT_GREEN.pretty_name = "fern green"
 PALETTE_GOLD = Colour.from_hexa_str("BA862B")
 PALETTE_GOLD.pretty_name = "dark goldenrod"
+
+STRATEGY_1 = Colour(228, 33, 42)
+STRATEGY_1.pretty_name = "colour leadership"
+STRATEGY_2 = Colour(239, 150, 41)
+STRATEGY_2.pretty_name = "colour diplomacy"
+STRATEGY_3 = Colour(255, 242, 11)
+STRATEGY_3.pretty_name = "colour politics"
+STRATEGY_4 = Colour(59, 185, 69)
+STRATEGY_4.pretty_name = "colour construction"
+STRATEGY_5 = Colour(6, 166, 152)
+STRATEGY_5.pretty_name = "colour trade"
+STRATEGY_6 = Colour(21, 142, 201)
+STRATEGY_6.pretty_name = "colour warfare"
+STRATEGY_7 = Colour(23, 71, 157)
+STRATEGY_7.pretty_name = "colour technology"
+STRATEGY_8 = Colour(114, 44, 138)
+STRATEGY_8.pretty_name = "colour imperial"
+
+STRATEGY_COLOURS = [
+    STRATEGY_1,
+    STRATEGY_2,
+    STRATEGY_3,
+    STRATEGY_4,
+    STRATEGY_5,
+    STRATEGY_6,
+    STRATEGY_7,
+    STRATEGY_8,
+]

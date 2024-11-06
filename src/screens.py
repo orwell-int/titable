@@ -544,6 +544,94 @@ class ScreenStrategy(Screen):
         # self._text_round.draw()
 
 
+class ScreenStrategyPlayer(Screen):
+    def __init__(self, game: logic.Game, player_num: int):
+        strategies_to_players = {}
+        can_swap = True
+        for player in game.players:
+            if player.strategy != Strategies.NONE:
+                strategies_to_players[player.strategy] = player
+            else:
+                can_swap = False
+        player = game.get_player(player_num)
+        super().__init__(
+            "setup colour", player.name, title_colour=None, side_colour=player.colour
+        )
+        self._game = game
+        button_font = Widgets.FONTS.DejaVu18
+        num_columns = 3
+        num_lines = 3
+        dx = 4
+        dy = 4
+        sx = (INNER_X - (1 + num_columns) * dx) // num_columns  # ~ 85
+        sy = (INNER_Y - (1 + num_lines) * dy) // num_lines  # ~ 65
+        self._buttons = []
+        self._center_control = None
+        strategy_index = 1
+        for line in range(num_lines):
+            for column in range(num_columns):
+                disable = False
+                is_colour = not ((line == 1) and (column == 1))
+                if is_colour:
+                    colour = Strategies.to_colour(strategy_index)
+                    is_button = True
+                    if strategy_index in strategies_to_players:
+                        text = strategies_to_players[strategy_index].name
+                        disable = not can_swap
+                    else:
+                        text = f"{strategy_index} [{game.available_strategies[strategy_index]}]"
+                        disable = can_swap
+                    strategy_index += 1
+                else:
+                    colour = colours.PLAYER_BLANK
+                    if can_swap:
+                        text = "swap"
+                    else:
+                        text = "back"
+                    is_button = can_swap
+                if is_button:
+                    control = blocks.ButtonRectangle(
+                        LEFT_BAR_WIDTH + dx + (dx + sx) * column,
+                        TITLE_HEIGHT + dy + (dy + sy) * line,
+                        sx,
+                        sy,
+                        text,
+                        colour,
+                        Screen.COLOUR_BORDER,
+                    )
+                    if disable:
+                        control.enabled = False
+                else:
+                    control = blocks.Rectangle(
+                        LEFT_BAR_WIDTH + dx + (dx + sx) * column,
+                        TITLE_HEIGHT + dy + (dy + sy) * line,
+                        sx,
+                        sy,
+                        text,
+                        colour,
+                        Screen.COLOUR_BORDER,
+                    )
+                if is_colour:
+                    self._buttons.append(control)
+                else:
+                    self._center_control = control
+        self._text_turn = self._create_text_turn()
+        self._text_round = self._create_text_round()
+        self.update()
+
+    def update(self):
+        self._text_turn.text = f"T {self._game.turn}"
+        self._text_round.text = f"R {self._game.round}"
+
+    def draw(self):
+        super().draw()
+        for button in self._buttons:
+            button.draw()
+        self._center_control.draw()
+        self._text_turn.draw()
+        self._text_round.draw()
+
+
 def main():
     import sys
     import M5
@@ -554,7 +642,7 @@ def main():
     if len(sys.argv) > 1:
         try:
             param = int(sys.argv[1])
-            if 0 < param <= 10:
+            if 0 < param <= 12:
                 select = param
         except:
             pass
@@ -604,6 +692,20 @@ def main():
         player = game.get_next_player()
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategy(game)
+        screen_setup_colour.draw()
+    elif 11 == select:
+        game = logic.Game.build_fake_game()
+        game.start_playing()
+        screen_setup_colour = ScreenStrategyPlayer(game, player_num=5)
+        screen_setup_colour.draw()
+    elif 12 == select:
+        game = logic.Game.build_fake_game()
+        game.start_playing()
+        player = game.get_next_player()
+        player.strategy = Strategies.WARFARE
+        player = game.get_next_player()
+        player.strategy = Strategies.TECHNOLOGY
+        screen_setup_colour = ScreenStrategyPlayer(game, player_num=5)
         screen_setup_colour.draw()
     M5.update()
 

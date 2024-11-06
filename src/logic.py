@@ -72,6 +72,10 @@ class Strategies:
                 return str(strategy)
         raise Exception(f"Invalid value for a strategy: {strategy}")
 
+    @staticmethod
+    def to_colour(strategy: int):
+        return colours.STRATEGY_COLOURS[strategy - 1]
+
 
 class Game:
     # create the players with their colours
@@ -188,6 +192,10 @@ class Game:
         self._round = 1
         self._start_phase_strategy()
 
+    @property
+    def available_strategies(self):
+        return self._available_strategies
+
     def _start_phase_strategy(self):
         self._turn += 1
         self._phase = Game.PHASE_STRATEGY
@@ -197,10 +205,10 @@ class Game:
     def _end_phase_strategy(self):
         for strategy in self._available_strategies.keys():
             self._available_strategies[strategy] += 1
-        self._order_players()
+        self._ordered_players = self.order_players()
 
-    def _order_players(self):
-        self._ordered_players = sorted(self._players, key=lambda x: x._strategy)
+    def order_players(self):
+        return sorted(self._players, key=lambda x: x._strategy * 10 + x._num)
 
     def set_speaker(self, num_player):
         self._speaker = num_player
@@ -255,11 +263,11 @@ class Game:
             print(repr(game))
 
         player = game.get_player(5)
-        player.name = "Florent"
+        player.name = "FLORENT"
         player.colour = colours.PLAYER_RED
 
         player = game.get_player(2)
-        player.name = "Pierre"
+        player.name = "PIERRE"
         try:
             player.colour = colours.PLAYER_RED
         except Exception as e:
@@ -267,19 +275,19 @@ class Game:
         player.colour = colours.PLAYER_BLACK
 
         player = game.get_player(4)
-        player.name = "Shizu"
+        player.name = "SHIZU"
         player.colour = colours.PLAYER_GREEN
 
         player = game.get_player(6)
-        player.name = "Julie"
+        player.name = "JULIE"
         player.colour = colours.PLAYER_ORANGE
 
         player = game.get_player(1)
-        player.name = "Michael"
+        player.name = "MICHAEL"
         player.colour = colours.PLAYER_PURPLE
 
         player = game.get_player(3)
-        player.name = "Romain"
+        player.name = "ROMAIN"
         player.colour = colours.PLAYER_BLUE
 
         game.set_speaker(3)
