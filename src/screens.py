@@ -642,7 +642,7 @@ def main():
     if len(sys.argv) > 1:
         try:
             param = int(sys.argv[1])
-            if 0 < param <= 12:
+            if 0 < param <= 13:
                 select = param
         except:
             pass
@@ -706,6 +706,23 @@ def main():
         player = game.get_next_player()
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategyPlayer(game, player_num=5)
+        screen_setup_colour.draw()
+    elif 13 == select:
+        game = logic.Game.build_fake_game()
+        game.start_playing()
+        player = game.get_next_player()
+        player.strategy = Strategies.WARFARE
+        player = game.get_next_player()
+        player.strategy = Strategies.TECHNOLOGY
+        player = game.get_next_player()
+        player.strategy = Strategies.DIPLOMACY
+        player = game.get_next_player()
+        player.strategy = Strategies.CONSTRUCTION
+        player = game.get_next_player()
+        player.strategy = Strategies.TRADE
+        player = game.get_next_player()
+        player.strategy = Strategies.LEADERSHIP
+        screen_setup_colour = ScreenStrategyPlayer(game, player.num)
         screen_setup_colour.draw()
     M5.update()
 

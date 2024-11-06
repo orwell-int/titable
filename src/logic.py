@@ -365,6 +365,10 @@ class Player:
             for observer in self._observers_colour:
                 observer.notify("colour", colour)
 
+    @property
+    def num(self):
+        return self._num
+
     def can_play(self):
         phase = self._game.phase
         if Game.PHASE_STRATEGY == phase:
