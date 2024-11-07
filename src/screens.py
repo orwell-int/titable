@@ -114,9 +114,19 @@ class Screen:
             1,
             MAX_X - 1,
             TITLE_HEIGHT,
-            title,
+            "",
             side_colour,
             Screen.COLOUR_BORDER,
+        )
+        cx = (MAX_X - LEFT_BAR_WIDTH) // 2 + LEFT_BAR_WIDTH
+        cy = TITLE_HEIGHT // 2
+        self._title_text = blocks.DecorationText(
+            title,
+            cx,
+            cy,
+            side_colour.get_contrasting_text(),
+            side_colour,
+            font=Widgets.FONTS.DejaVu12,
         )
         self.left_bar = blocks.Rectangle(
             1,
@@ -180,6 +190,7 @@ class Screen:
 
     def draw(self):
         self.title_rectangle.draw()
+        self._title_text.draw()
         self.left_bar.draw()
         self.line.draw()
         self.background.draw()
