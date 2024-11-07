@@ -28,22 +28,21 @@ class Strategies:
         IMPERIAL: "Imperial",
     }
 
-    ALL = set(
-        [
-            LEADERSHIP,
-            DIPLOMACY,
-            POLITICS,
-            CONSTRUCTION,
-            TRADE,
-            WARFARE,
-            TECHNOLOGY,
-            IMPERIAL,
-        ]
-    )
+    # use a list to keep the order
+    ALL = [
+        LEADERSHIP,
+        DIPLOMACY,
+        POLITICS,
+        CONSTRUCTION,
+        TRADE,
+        WARFARE,
+        TECHNOLOGY,
+        IMPERIAL,
+    ]
 
     @staticmethod
     def to_string(strategy: int):
-        return Strategies[strategy]
+        return Strategies.DESCRIPTIONS[strategy]
 
     @staticmethod
     def to_short_string(strategy: int):
@@ -205,7 +204,7 @@ class Game:
     def _start_phase_strategy(self):
         self._turn += 1
         self._phase = Game.PHASE_STRATEGY
-        for strategy in Strategies.ALL - set(self._available_strategies.keys()):
+        for strategy in set(Strategies.ALL) - set(self._available_strategies.keys()):
             self._available_strategies[strategy] = 0
 
     def _end_phase_strategy(self):

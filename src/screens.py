@@ -667,6 +667,19 @@ class ScreenStrategyPlayer(Screen):
                     self._buttons.append(control)
                 else:
                     self._center_control = control
+        self._text_strategies = []
+        for button, strategy in zip(self._buttons, logic.Strategies.ALL):
+            cx, cy = button.center
+            text = Strategies.to_string(strategy)
+            text_strategy = blocks.DecorationText(
+                text,
+                cx,
+                cy + 20,
+                button.text_colour,
+                button.fill_colour,
+                font=Widgets.FONTS.DejaVu12,
+            )
+            self._text_strategies.append(text_strategy)
         self.update()
 
     def draw(self):
@@ -674,6 +687,8 @@ class ScreenStrategyPlayer(Screen):
         for button in self._buttons:
             button.draw()
         self._center_control.draw()
+        for text_strategy in self._text_strategies:
+            text_strategy.draw()
 
 
 class ScreenAction(Screen):
