@@ -381,7 +381,8 @@ class ScreenSetupName(Screen):
         player = players[player_index]
         super().__init__("setup colour", player.name, player.colour)
         super().__init__("setup name", players[player_index].name + "_", colours.WHITE)
-        button_font = Widgets.FONTS.DejaVu24
+        button_small_font = Widgets.FONTS.DejaVu12
+        button_font = Widgets.FONTS.DejaVu40
         rectangle_font = Widgets.FONTS.DejaVu18
         letters_by_line = [
             LetterLoop(0),
@@ -400,7 +401,7 @@ class ScreenSetupName(Screen):
             "<<<",
             colours.PALETTE_LIGHT_GREEN,
             Screen.COLOUR_BORDER,
-            button_font,
+            button_small_font,
         )
         x = LEFT_BAR_WIDTH + 4 * (item_sx - 1)
         self._button_right = blocks.ButtonRectangle(
@@ -411,7 +412,7 @@ class ScreenSetupName(Screen):
             ">>>",
             colours.PALETTE_LIGHT_GREEN,
             Screen.COLOUR_BORDER,
-            button_font,
+            button_small_font,
         )
         self._buttons = []
         self._rectangles = []

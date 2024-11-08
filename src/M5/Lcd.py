@@ -13,26 +13,37 @@ TEXT_BACKGROUND_COLOUR = None
 PYGAME_FONT = None
 
 
+# the text is not long enough
+# FONT_STRING = "DejaVuSans-ExtraLight.ttf"
+# this is still not long enough, but a bit better
+FONT_STRING = "DejaVuSans-Bold.ttf"
+
+
 def setFont(index: int):
     global FONT
     global PYGAME_FONT
     FONT = index
     if Widgets.FONTS.DejaVu9 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont("DejaVuSans-ExtraLight.ttf", 9)
+        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 9)
     elif Widgets.FONTS.DejaVu12 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont("DejaVuSans-ExtraLight.ttf", 12)
+        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 12)
     elif Widgets.FONTS.DejaVu18 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont("DejaVuSans-ExtraLight.ttf", 18)
+        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 18)
     elif Widgets.FONTS.DejaVu24 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont("DejaVuSans-ExtraLight.ttf", 24)
+        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 24)
     elif Widgets.FONTS.DejaVu40 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont("DejaVuSans-ExtraLight.ttf", 40)
+        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 40)
+
+
+def _setDefaultFont():
+    global PYGAME_FONT
+    if PYGAME_FONT is None:
+        setFont(Widgets.FONTS.DejaVu18)
 
 
 def textWidth(text: str) -> int:
     global PYGAME_FONT
-    if PYGAME_FONT is None:
-        PYGAME_FONT = pygame.freetype.SysFont("DejaVuSans-ExtraLight.ttf", 18)
+    _setDefaultFont()
     text_surface, rectangle = PYGAME_FONT.render(text)
     return rectangle[2]
 
@@ -65,8 +76,7 @@ def setTextColor(text_colour_hexa: int, fill_colour_hexa: int):
 def drawString(text: str, tx: int, ty: int):
     global PYGAME_FONT
     global TEXT_COLOUR
-    if PYGAME_FONT is None:
-        PYGAME_FONT = pygame.freetype.SysFont("DejaVuSans-ExtraLight.ttf", 18)
+    _setDefaultFont()
     PYGAME_FONT.render_to(M5.DISPLAY, (tx, ty), text, colours.rgb(TEXT_COLOUR))
 
 
