@@ -47,6 +47,28 @@ class DecorationText(Visible, Decoration):
         self._fill_colour = fill_colour
         self._font = font
 
+    @property
+    def cx(self):
+        return self._cx
+
+    @cx.setter
+    def cx(self, cx):
+        self._cx = cx
+        self._changed = True
+
+    @property
+    def cy(self):
+        return self._cy
+
+    @cy.setter
+    def cy(self, cy):
+        self._cy = cy
+        self._changed = True
+
+    @property
+    def font(self):
+        return self._font
+
     def __repr__(self):
         string = f"DecorationText(text={self._text}, "
         string += f"cx={self._cx}, cy={self._cy}, "
@@ -261,6 +283,22 @@ class Rectangle(Visible):
     def center(self):
         return self.x + self.dx // 2, self.y + self.dy // 2
 
+    @property
+    def left(self):
+        return self.x
+
+    @property
+    def right(self):
+        return self.x + self.dx
+
+    @property
+    def top(self):
+        return self.y
+
+    @property
+    def bottom(self):
+        return self.y + self.dy
+
 
 class ButtonRectangle(Visible):
     def __init__(
@@ -305,6 +343,7 @@ class ButtonRectangle(Visible):
             font,
         )
         self._enabled = True
+        self._more_decoration_texts = []
 
     @property
     def text(self):
@@ -316,6 +355,33 @@ class ButtonRectangle(Visible):
             self._text = text
             if self.decoration_text:
                 self.decoration_text.text = text
+
+    def add_more_text(self, text):
+        if not self.decoration_text:
+            raise Exception("Cannot add more text when there is no text")
+        y_offset = self.dy // (len(self._more_decoration_texts) + 3)
+        y = self.y + y_offset
+        self.decoration_text.cy = y
+        y += y_offset
+        for deco in self._more_decoration_texts:
+            deco.cy = y
+            y += y_offset
+
+        deco = DecorationText(
+            text,
+            self.cx,
+            y,
+            self.decoration_text.text_colour,
+            self.decoration_text.fill_colour,
+            self.decoration_text.font,
+        )
+        self._more_decoration_texts.append(deco)
+        self._changed = True
+
+    def set_more_text(self, index, text):
+        if self._more_decoration_texts[index].text != text:
+            self._more_decoration_texts[index].text = text
+            self._changed = True
 
     @property
     def text_colour(self):
@@ -384,6 +450,9 @@ class ButtonRectangle(Visible):
                 self._current_border_colour = self._border_colour
                 self.decoration_text.text_colour = self._text_colour
                 self.decoration_text.fill_colour = self._fill_colour
+                for deco in self._more_decoration_texts:
+                    deco.text_colour = self._text_colour
+                    deco.fill_colour = self._fill_colour
             else:
                 if self._disabled_fill_colour is None:
                     disabled_fill_colour = self._fill_colour.build_different()
@@ -397,6 +466,9 @@ class ButtonRectangle(Visible):
                 self._current_border_colour = disabled_border_colour
                 self.decoration_text.text_colour = self._disabled_text_colour
                 self.decoration_text.fill_colour = disabled_fill_colour
+                for deco in self._more_decoration_texts:
+                    deco.text_colour = self._disabled_text_colour
+                    deco.fill_colour = disabled_fill_colour
             self.enabled = value
 
     def draw(self):
@@ -414,10 +486,36 @@ class ButtonRectangle(Visible):
                 self._current_fill_colour.hexa,
             )
             self.decoration_text.draw()
+            for deco in self._more_decoration_texts:
+                deco.draw()
+
+    @property
+    def cx(self):
+        return self.x + self.dx // 2
+
+    @property
+    def cy(self):
+        return self.y + self.dy // 2
 
     @property
     def center(self):
         return self.x + self.dx // 2, self.y + self.dy // 2
+
+    @property
+    def left(self):
+        return self.x
+
+    @property
+    def right(self):
+        return self.x + self.dx
+
+    @property
+    def top(self):
+        return self.y
+
+    @property
+    def bottom(self):
+        return self.y + self.dy
 
     def notify(self, key, value):
         if "name" == key:

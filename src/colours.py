@@ -137,6 +137,8 @@ PLAYER_COLOURS = [
     PLAYER_YELLOW,
 ]
 
+GRAY = Colour(255 // 2, 255 // 2, 255 // 2)
+
 PALETTE_DARK_BLUE = Colour.from_hexa_str("192B48")
 PALETTE_DARK_BLUE.pretty_name = "oxford blue"
 PALETTE_DARK_GREEN = Colour.from_hexa_str("212B1E")

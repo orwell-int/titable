@@ -568,19 +568,8 @@ class ScreenStrategy(Screen):
         self._buttons, self._rectangles = self._create_grid_players(
             button_font, self._players
         )
-        self._text_strategies = []
         for button, player in zip(self._buttons, self._players):
-            cx, cy = button.center
-            text = Strategies.to_short_string(player.strategy)
-            text_strategy = blocks.DecorationText(
-                text,
-                cx,
-                cy + 20,
-                button.text_colour,
-                button.fill_colour,
-                font=Widgets.FONTS.DejaVu18,
-            )
-            self._text_strategies.append(text_strategy)
+            button.add_more_text(Strategies.to_short_string(player.strategy))
         self.update()
 
     def update(self):
@@ -597,8 +586,6 @@ class ScreenStrategy(Screen):
             button.draw()
         for rectangle in self._rectangles:
             rectangle.draw()
-        for text_strategy in self._text_strategies:
-            text_strategy.draw()
 
 
 class ScreenStrategyPlayer(Screen):
@@ -678,19 +665,8 @@ class ScreenStrategyPlayer(Screen):
                     self._buttons.append(control)
                 else:
                     self._center_control = control
-        self._text_strategies = []
         for button, strategy in zip(self._buttons, logic.Strategies.ALL):
-            cx, cy = button.center
-            text = Strategies.to_string(strategy)
-            text_strategy = blocks.DecorationText(
-                text,
-                cx,
-                cy + 20,
-                button.text_colour,
-                button.fill_colour,
-                font=Widgets.FONTS.DejaVu12,
-            )
-            self._text_strategies.append(text_strategy)
+            button.add_more_text(Strategies.to_string(strategy))
         self.update()
 
     def draw(self):
@@ -698,8 +674,6 @@ class ScreenStrategyPlayer(Screen):
         for button in self._buttons:
             button.draw()
         self._center_control.draw()
-        for text_strategy in self._text_strategies:
-            text_strategy.draw()
 
 
 class ScreenAction(Screen):
@@ -744,6 +718,7 @@ class ScreenAction(Screen):
         )
         player_button_sx = int(x_ratio_player_button * (INNER_X + 1))
         action_button_sx = (INNER_X + 1) - 2 * player_button_sx
+        small_button_height = (INNER_Y + 1) // 3 + 1
 
         text_previous = "previous"
         self._button_previous = blocks.ButtonRectangle(
@@ -768,12 +743,51 @@ class ScreenAction(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+
+        self._button_strategy = blocks.ButtonRectangle(
+            self._button_previous.right - 1,
+            TITLE_HEIGHT,
+            self._button_next.left - self._button_previous.right + 2,
+            small_button_height,
+            Strategies.to_string(player.strategy),
+            Strategies.to_colour(player.strategy),
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+
+        self._button_tactical_and_component = blocks.ButtonRectangle(
+            self._button_previous.right - 1,
+            self._button_strategy.bottom - 1,
+            self._button_next.left - self._button_previous.right + 2,
+            small_button_height,
+            "Tactical",
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+        self._button_tactical_and_component.add_more_text("/")
+        self._button_tactical_and_component.add_more_text("Component")
+
+        self._button_skip_or_pass = blocks.ButtonRectangle(
+            self._button_previous.right - 1,
+            self._button_tactical_and_component.bottom - 1,
+            self._button_next.left - self._button_previous.right + 2,
+            MAX_Y - (self._button_tactical_and_component.bottom - 1),
+            "Pass",
+            colours.GRAY,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+
         self.update()
 
     def draw(self):
         super().draw()
         self._button_previous.draw()
         self._button_next.draw()
+        self._button_strategy.draw()
+        self._button_tactical_and_component.draw()
+        self._button_skip_or_pass.draw()
 
 
 def main():
