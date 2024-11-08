@@ -790,20 +790,21 @@ class ScreenAction(Screen):
         self._button_skip_or_pass.draw()
 
 
-def main():
+def main(select=None):
     import sys
     import M5
     import logic
-
-    M5.begin()
-    select = 1
-    if len(sys.argv) > 1:
-        try:
-            param = int(sys.argv[1])
-            if 0 < param <= 14:
-                select = param
-        except:
-            pass
+    is_real = select is not None
+    if not is_real:
+        M5.begin()
+        select = 1
+        if len(sys.argv) > 1:
+            try:
+                param = int(sys.argv[1])
+                if 0 < param <= 14:
+                    select = param
+            except:
+                pass
     if 1 == select:
         screen_welcome = ScreenWelcome()
         screen_welcome.draw()
@@ -889,7 +890,8 @@ def main():
         elif 14 == select:
             screen_setup_colour = ScreenAction(game)
             screen_setup_colour.draw()
-    M5.update()
+    if not is_real:
+        M5.update()
 
 
 if "__main__" == __name__:
