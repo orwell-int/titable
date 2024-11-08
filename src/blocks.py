@@ -316,6 +316,7 @@ class ButtonRectangle(Visible):
         font: int = Widgets.FONTS.DejaVu12,
         disabled_fill_colour: Colour = None,
         disabled_border_colour: Colour = None,
+        inset=0,
     ):
         super().__init__()
         self.x = x
@@ -344,6 +345,7 @@ class ButtonRectangle(Visible):
         )
         self._enabled = True
         self._more_decoration_texts = []
+        self._inset = inset
 
     @property
     def text(self):
@@ -475,14 +477,16 @@ class ButtonRectangle(Visible):
         if not self._visible:
             return
         if self._changed:
-            Lcd.drawRect(
-                self.x, self.y, self.dx, self.dy, self._current_border_colour.hexa
-            )
+            x = self.x + self._inset
+            y = self.y + self._inset
+            dx = self.dx - 2 * self._inset
+            dy = self.dy - 2 * self._inset
+            Lcd.drawRect(x, y, dx, dy, self._current_border_colour.hexa)
             Lcd.fillRect(
-                self.x + 1,
-                self.y + 1,
-                self.dx - 2,
-                self.dy - 2,
+                x + 1,
+                y + 1,
+                dx - 2,
+                dy - 2,
                 self._current_fill_colour.hexa,
             )
             self.decoration_text.draw()

@@ -717,7 +717,7 @@ class ScreenAction(Screen):
             has_turn=True,
         )
         self._game = game
-        button_font = Widgets.FONTS.DejaVu18
+        button_font = Widgets.FONTS.DejaVu12
         x_weight_player_button = 2.5
         x_weight_action_button = 3
         x_ratio_player_button = x_weight_player_button / (
@@ -737,6 +737,7 @@ class ScreenAction(Screen):
             colours.PALETTE_LIGHT_GREEN,
             Screen.COLOUR_BORDER,
             button_font,
+            inset=2,
         )
 
         text_next = "next"
@@ -749,6 +750,7 @@ class ScreenAction(Screen):
             colours.PALETTE_LIGHT_GREEN,
             Screen.COLOUR_BORDER,
             button_font,
+            inset=2,
         )
 
         self._button_strategy = blocks.ButtonRectangle(
@@ -760,6 +762,7 @@ class ScreenAction(Screen):
             Strategies.to_colour(player.strategy),
             Screen.COLOUR_BORDER,
             button_font,
+            inset=2,
         )
 
         self._button_tactical_and_component = blocks.ButtonRectangle(
@@ -771,6 +774,7 @@ class ScreenAction(Screen):
             colours.PALETTE_LIGHT_GREEN,
             Screen.COLOUR_BORDER,
             button_font,
+            inset=2,
         )
         self._button_tactical_and_component.add_more_text("/")
         self._button_tactical_and_component.add_more_text("Component")
@@ -784,6 +788,7 @@ class ScreenAction(Screen):
             colours.GRAY,
             Screen.COLOUR_BORDER,
             button_font,
+            inset=2,
         )
 
         self.update()
