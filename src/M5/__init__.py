@@ -1,5 +1,8 @@
 import sys
 
+
+from . import Speaker
+
 import pygame
 
 
@@ -10,6 +13,7 @@ CLOCK = None
 def begin():
     global DISPLAY
     global CLOCK
+    Speaker.init()
     pygame.init()
     DISPLAY = pygame.display.set_mode((320, 240), 0, 32)
     CLOCK = pygame.time.Clock()

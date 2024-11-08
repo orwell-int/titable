@@ -905,6 +905,8 @@ def main(select=None):
     import M5
     import logic
 
+    from M5 import Speaker
+
     is_real = select is not None
     if not is_real:
         M5.begin()
@@ -916,6 +918,9 @@ def main(select=None):
                     select = param
             except:
                 pass
+    else:
+        Speaker.setChannelVolume(0, 40)
+    Speaker.tone(2000, 50)
     if 1 == select:
         screen_welcome = ScreenWelcome()
         screen_welcome.draw()
