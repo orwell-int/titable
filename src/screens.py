@@ -44,15 +44,16 @@ INNER_Y = MAX_Y - TITLE_HEIGHT - 1
 
 
 class SillyText:
-    def __init__(self):
-        self._text = None
+    def __init__(self, text):
+        self._text = text
 
-    def _set_text(self, text):
+    @property
+    def text(self):
+        return self._text.text
+
+    @text.setter
+    def text(self, text):
         self._text.text = text
-
-    text = property(fset=_set_text)
-
-    del _set_text
 
     def draw(self):
         self._text.draw()
@@ -62,13 +63,15 @@ class TextRound(SillyText):
     def __init__(self, text_colour, fill_colour):
         cx = LEFT_BAR_WIDTH // 2
         cy = MAX_Y // 2 - 20
-        self._text = blocks.DecorationText(
-            "",
-            cx,
-            cy,
-            text_colour,
-            fill_colour,
-            font=Widgets.FONTS.DejaVu18,
+        super().__init__(
+            blocks.DecorationText(
+                "",
+                cx,
+                cy,
+                text_colour,
+                fill_colour,
+                font=Widgets.FONTS.DejaVu18,
+            )
         )
 
 
@@ -120,14 +123,17 @@ class Screen:
         )
         cx = (MAX_X - LEFT_BAR_WIDTH) // 2 + LEFT_BAR_WIDTH
         cy = TITLE_HEIGHT // 2
-        self._title_text = blocks.DecorationText(
-            title,
-            cx,
-            cy,
-            side_colour.get_contrasting_text(),
-            side_colour,
-            font=Widgets.FONTS.DejaVu12,
-        )
+        if title:
+            self._title_text = blocks.DecorationText(
+                title,
+                cx,
+                cy,
+                side_colour.get_contrasting_text(),
+                side_colour,
+                font=Widgets.FONTS.DejaVu12,
+            )
+        else:
+            self._title_text = None
         self.left_bar = blocks.Rectangle(
             1,
             TITLE_HEIGHT,
@@ -190,7 +196,8 @@ class Screen:
 
     def draw(self):
         self.title_rectangle.draw()
-        self._title_text.draw()
+        if self._title_text:
+            self._title_text.draw()
         self.left_bar.draw()
         self.line.draw()
         self.background.draw()
@@ -794,6 +801,7 @@ def main(select=None):
     import sys
     import M5
     import logic
+
     is_real = select is not None
     if not is_real:
         M5.begin()
