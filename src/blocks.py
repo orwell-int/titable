@@ -215,10 +215,38 @@ class Rectangle(Visible):
             )
         else:
             self.decoration_text = None
+        self._more_decoration_texts = []
 
     @property
     def text(self):
         return self._text
+
+    def add_more_text(self, text):
+        if not self.decoration_text:
+            raise Exception("Cannot add more text when there is no text")
+        y_offset = self.dy // (len(self._more_decoration_texts) + 3)
+        y = self.y + y_offset
+        self.decoration_text.cy = y
+        y += y_offset
+        for deco in self._more_decoration_texts:
+            deco.cy = y
+            y += y_offset
+
+        deco = DecorationText(
+            text,
+            self.cx,
+            y,
+            self.decoration_text.text_colour,
+            self.decoration_text.fill_colour,
+            self.decoration_text.font,
+        )
+        self._more_decoration_texts.append(deco)
+        self._changed = True
+
+    def set_more_text(self, index, text):
+        if self._more_decoration_texts[index].text != text:
+            self._more_decoration_texts[index].text = text
+            self._changed = True
 
     @property
     def text_colour(self):
@@ -278,6 +306,16 @@ class Rectangle(Visible):
             )
             if self.decoration_text:
                 self.decoration_text.draw()
+            for deco in self._more_decoration_texts:
+                deco.draw()
+
+    @property
+    def cx(self):
+        return self.x + self.dx // 2
+
+    @property
+    def cy(self):
+        return self.y + self.dy // 2
 
     @property
     def center(self):

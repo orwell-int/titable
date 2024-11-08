@@ -803,6 +803,103 @@ class ScreenAction(Screen):
         self._button_skip_or_pass.draw()
 
 
+class ScreenStatus(Screen):
+    """
+    The custom part should look like this
+    <---------- INNER_X ---------->
+    +-------+---+-----+---+-------+   ^
+    |       |             |       |   |
+    |       |             |       |   |
+    |       |             |       |   |
+    +       +             +       +   |
+    |Previou|             | Next  |
+    |       |    TEXT     |       | INNER_Y
+    |player |             |player |
+    +       +             +       +   |
+    |       |             |       |   |
+    |       |             |       |   |
+    |       |             |       |   |
+    +-------+---+-----+---+-------+   v
+      2.5         3.0        2.5
+    Maybe a bit of spacing between the buttons if possible.
+    """
+
+    def __init__(self, game: logic.Game):
+        # game.current_player seems better then game.get_player(index)
+        player = game.current_player
+        super().__init__(
+            "action",
+            player.name,
+            title_colour=None,
+            side_colour=player.colour,
+            game=game,
+            has_round=True,
+            has_turn=True,
+        )
+        self._game = game
+        button_font = Widgets.FONTS.DejaVu12
+        x_weight_player_button = 2.5
+        x_weight_action_button = 3
+        x_ratio_player_button = x_weight_player_button / (
+            x_weight_player_button * 2 + x_weight_action_button
+        )
+        player_button_sx = int(x_ratio_player_button * (INNER_X + 1))
+        action_button_sx = (INNER_X + 1) - 2 * player_button_sx
+        small_button_height = (INNER_Y + 1) // 3 + 1
+
+        text_previous = "previous"
+        self._button_previous = blocks.ButtonRectangle(
+            LEFT_BAR_WIDTH,
+            TITLE_HEIGHT,
+            player_button_sx,
+            INNER_Y + 1,
+            text_previous,
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+            inset=2,
+        )
+
+        text_next = "next"
+        self._button_next = blocks.ButtonRectangle(
+            MAX_X - player_button_sx,
+            TITLE_HEIGHT,
+            player_button_sx,
+            INNER_Y + 1,
+            text_next,
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+            inset=2,
+        )
+
+        y_offset = 30
+        self._description = blocks.Rectangle(
+            self._button_previous.right - 1,
+            TITLE_HEIGHT + y_offset,
+            self._button_next.left - self._button_previous.right + 2,
+            INNER_Y + 1 - y_offset * 2,
+            "Score",
+            colours.PALETTE_DARK_BLUE,
+            colours.PALETTE_DARK_BLUE,
+            Widgets.FONTS.DejaVu18,
+        )
+        self._description.add_more_text("at most")
+        self._description.add_more_text("one of each")
+        self._description.add_more_text("type of")
+        self._description.add_more_text("objective")
+        self._description.add_more_text("(public,")
+        self._description.add_more_text("private)")
+
+        self.update()
+
+    def draw(self):
+        super().draw()
+        self._button_previous.draw()
+        self._button_next.draw()
+        self._description.draw()
+
+
 def main(select=None):
     import sys
     import M5
@@ -815,7 +912,7 @@ def main(select=None):
         if len(sys.argv) > 1:
             try:
                 param = int(sys.argv[1])
-                if 0 < param <= 14:
+                if 0 < param <= 15:
                     select = param
             except:
                 pass
@@ -880,10 +977,7 @@ def main(select=None):
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategyPlayer(game, player_num=5)
         screen_setup_colour.draw()
-    elif select in (
-        13,
-        14,
-    ):
+    elif 13 <= select <= 15:
         game = logic.Game.build_fake_game()
         game.start_playing()
         player = game.get_next_player()
@@ -903,6 +997,9 @@ def main(select=None):
             screen_setup_colour.draw()
         elif 14 == select:
             screen_setup_colour = ScreenAction(game)
+            screen_setup_colour.draw()
+        elif 15 == select:
+            screen_setup_colour = ScreenStatus(game)
             screen_setup_colour.draw()
     if not is_real:
         M5.update()
