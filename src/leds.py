@@ -293,6 +293,7 @@ def main():
     lights.set_colour(colours.PLAYER_PINK, [255, 174, 160])
     lights.set_colour(colours.PLAYER_RED, [169, 34, 34])
     lights.set_colour(colours.PLAYER_PURPLE, [83, 31, 185])
+    lights.write_config()
     if False:
         while True:
             lights.turn_on(colours.PLAYER_YELLOW)
@@ -313,7 +314,6 @@ def main():
                 )
                 lights.turn_on(colour)
                 time.sleep(2)
-    lights.write_config()
 
 
 if "__main__" == __name__:

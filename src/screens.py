@@ -34,6 +34,8 @@ class ScreenTypes:
     ACTION_PLAYER = 6
     # player dedicated one button for previous + text + one for next (player / round)
     STATUS_PLAYER = 7
+    # Menu
+    MENU = 8
 
 
 MAX_X = 320
@@ -114,6 +116,7 @@ class Screen:
         if side_colour is None:
             side_colour = colours.PALETTE_DARK_GREEN
         self._side_colour = side_colour
+        self._touchables = []
         self.title_rectangle = blocks.Rectangle(
             1,
             1,
@@ -172,6 +175,7 @@ class Screen:
                 colours.PALETTE_LIGHT_GREEN,
                 # Screen.COLOUR_BORDER,
             )
+            self._touchables.append(self.return_button)
         else:
             self.return_button = None
         if has_round:
@@ -191,6 +195,10 @@ class Screen:
         self._game = game
         self._lights = leds.Lights(only_print=False)
         self._switch_lights = True
+
+    def touch(self, x: int, y: int):
+        for touchable in self._touchables:
+            touchable.touch(x, y)
 
     def update(self):
         if self._text_round:
@@ -302,6 +310,9 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self._touchables.append(self._button_setup)
+        self._touchables.append(self._button_play)
+        self._touchables.append(self._button_reset)
         self.update()
 
     def draw(self):
@@ -334,6 +345,7 @@ class ScreenSetup(Screen):
         self._buttons, self._rectangles = self._create_grid_players(
             button_font, players
         )
+        self._touchables.extend(self._buttons)
         self.update()
 
     def draw(self):
@@ -473,6 +485,10 @@ class ScreenSetupName(Screen):
             colours.PALETTE_LIGHT_GREEN,
             # Screen.COLOUR_BORDER,
         )
+        self._touchables.append(self._button_left)
+        self._touchables.append(self._button_right)
+        self._touchables.extend(self._buttons)
+        self._touchables.append(self._button_erase)
         self.update()
 
     def draw(self):
@@ -554,6 +570,7 @@ class ScreenSetupColour(Screen):
                     self._buttons.append(control)
                 else:
                     self._center_control = control
+        self._touchables.extend(self._buttons)
         self.update()
 
     def draw(self):
@@ -591,6 +608,8 @@ class ScreenStrategy(Screen):
         )
         for button, player in zip(self._buttons, self._players):
             button.add_more_text(Strategies.to_short_string(player.strategy))
+        self._touchables.append(self._button_end_phase)
+        self._touchables.extend(self._buttons)
         self.update()
 
     def update(self):
@@ -688,6 +707,7 @@ class ScreenStrategyPlayer(Screen):
                     self._center_control = control
         for button, strategy in zip(self._buttons, logic.Strategies.ALL):
             button.add_more_text(Strategies.to_string(strategy))
+        self._touchables.extend(self._buttons)
         self.update()
 
     def draw(self):
@@ -806,7 +826,11 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
-
+        self._touchables.append(self._button_previous)
+        self._touchables.append(self._button_next)
+        self._touchables.append(self._button_strategy)
+        self._touchables.append(self._button_tactical_and_component)
+        self._touchables.append(self._button_skip_or_pass)
         self.update()
 
     def draw(self):
@@ -908,6 +932,8 @@ class ScreenStatus(Screen):
         self._description.add_more_text("(public,")
         self._description.add_more_text("private)")
 
+        self._touchables.append(self._button_previous)
+        self._touchables.append(self._button_next)
         self.update()
 
     def draw(self):
@@ -958,6 +984,9 @@ class ScreenMenu(Screen):
             button_font,
         )
         self._switch_lights = False
+        self._touchables.append(self._button_welcome)
+        self._touchables.append(self._button_reset_phase)
+        self._touchables.append(self._button_reset_round)
         self.update()
 
     def draw(self):

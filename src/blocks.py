@@ -4,6 +4,7 @@ import colours
 import M5
 from M5 import Lcd
 from M5 import Widgets
+from M5 import Speaker
 
 
 class Visible:
@@ -22,6 +23,34 @@ class Visible:
         if not self._visible:
             self._visible = True
             self._changed = True
+
+
+class Touchable:
+    def __init__(self):
+        self._action = None
+        print(f"__init__ self._action = {self._action}")
+        self._min_delta_ms = 100
+        self._next_ms = device.get_timeref_ms() + self._min_delta_ms
+
+    def _beep(self):
+        Speaker.tone(2000, 50)
+
+    def touch(self, x: int, y: int):
+        if self.contains(x, y):
+            print(f"touch self._action = {self._action}")
+            if self._action is not None:
+                ref_ms = device.get_timeref_ms()
+                if ref_ms >= self._next_ms:
+                    self._beep()
+                    self._action()
+                    self._next_ms = self._min_delta_ms + ref_ms
+
+    def force_touch(self):
+        self.touch(self.cx, self.cy)
+
+    @property
+    def action(self, action):
+        self._action = action
 
 
 class Decoration:
@@ -338,7 +367,7 @@ class Rectangle(Visible):
         return self.y + self.dy
 
 
-class ButtonRectangle(Visible):
+class ButtonRectangle(Visible, Touchable):
     def __init__(
         self,
         x: int,
@@ -472,7 +501,7 @@ class ButtonRectangle(Visible):
     def __str__(self):
         return self.__repr__()
 
-    def contains(self, x, y):
+    def contains(self, x: int, y: int):
         if not self._enabled:
             return False
         return self.x <= x <= (self.x + self.dx) and self.y <= y <= (self.y + self.dy)
@@ -566,7 +595,7 @@ class ButtonRectangle(Visible):
             self.fill_colour = value
 
 
-class ButtonCircle(Visible):
+class ButtonCircle(Visible, Touchable):
     def __init__(
         self,
         cx: int,

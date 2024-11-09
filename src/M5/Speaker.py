@@ -18,6 +18,18 @@ def setChannelVolume(channel: int, percentage: int):
     pygame.mixer.music.set_volume(percentage / 1000)
 
 
+def setAllChannelVolume(percentage: int):
+    pygame.mixer.music.set_volume(percentage / 1000)
+
+
+def setVolumePercentage(percentage: int):
+    pygame.mixer.music.set_volume(percentage / 1000)
+
+
+def setVolume(percentage: int):
+    pygame.mixer.music.set_volume(percentage / 1000)
+
+
 def tone(frequency: int, duration_ms: int):
     global BITS
     global SAMPLE_RATE
