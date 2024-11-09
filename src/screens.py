@@ -904,6 +904,54 @@ class ScreenStatus(Screen):
         self._description.draw()
 
 
+class ScreenMenu(Screen):
+    def __init__(self):
+        super().__init__("menu", "TI 4 assistant", colours.WHITE, has_return=True)
+        button_sx = 150
+        button_sy = 65
+        button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
+        button_x_offset = LEFT_BAR_WIDTH + 1 + button_x_delta
+        dx = 4
+        dy = 4
+        button_font = Widgets.FONTS.DejaVu18
+        self._button_welcome = blocks.ButtonRectangle(
+            button_x_offset,
+            TITLE_HEIGHT + dy,
+            button_sx,
+            button_sy,
+            "Welcome",
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+        self._button_reset_phase = blocks.ButtonRectangle(
+            button_x_offset,
+            TITLE_HEIGHT + dy + button_sy + dy,
+            button_sx,
+            button_sy,
+            "Reset phase",
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+        self._button_reset_round = blocks.ButtonRectangle(
+            button_x_offset,
+            TITLE_HEIGHT + dy + (button_sy + dy) * 2,
+            button_sx,
+            button_sy,
+            "Reset round",
+            colours.PALETTE_LIGHT_GREEN,
+            Screen.COLOUR_BORDER,
+            button_font,
+        )
+
+    def draw(self):
+        super().draw()
+        self._button_welcome.draw()
+        self._button_reset_phase.draw()
+        self._button_reset_round.draw()
+
+
 def main(select=None):
     import sys
     import M5
@@ -918,7 +966,7 @@ def main(select=None):
         if len(sys.argv) > 1:
             try:
                 param = int(sys.argv[1])
-                if 0 < param <= 15:
+                if 0 < param <= 16:
                     select = param
             except:
                 pass
@@ -1010,6 +1058,9 @@ def main(select=None):
         elif 15 == select:
             screen_setup_colour = ScreenStatus(game)
             screen_setup_colour.draw()
+    elif 16 == select:
+        screen_menu = ScreenMenu()
+        screen_menu.draw()
     if not is_real:
         M5.update()
 
