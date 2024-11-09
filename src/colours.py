@@ -67,8 +67,16 @@ class Colour:
             return BLACK
 
     @property
-    def hexa(self):
+    def raw_int(self):
         return (self.r << 16) + (self.g << 8) + self.b
+
+    @staticmethod
+    def from_raw_int(raw_int: int):
+        r = raw_int >> 16
+        raw_int -= r << 16
+        g = raw_int >> 8
+        b = raw_int - (g << 8)
+        return Colour(r, g, b)
 
     @property
     def pretty_name(self):
@@ -91,11 +99,11 @@ class Colour:
         return (self.r << 16) + (self.g << 8) + self.b
 
 
-def rgb(hexa_value: int):
-    r = hexa_value >> 16
-    hexa_value -= r << 16
-    g = hexa_value >> 8
-    b = hexa_value - (g << 8)
+def rgb(raw_int: int):
+    r = raw_int >> 16
+    raw_int -= r << 16
+    g = raw_int >> 8
+    b = raw_int - (g << 8)
     result = (r, g, b)
     return result
 
@@ -177,3 +185,12 @@ STRATEGY_COLOURS = [
     STRATEGY_7,
     STRATEGY_8,
 ]
+
+
+def main():
+    for colour in PLAYER_COLOURS:
+        print(f"{colour} -> {colour.get_perceived_lightness()}")
+
+
+if "__main__" == __name__:
+    main()

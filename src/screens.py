@@ -4,6 +4,8 @@ import blocks
 from logic import Player
 from logic import Strategies
 import logic
+import device
+import leds
 
 from M5 import Widgets
 
@@ -187,12 +189,17 @@ class Screen:
         else:
             self._text_turn = None
         self._game = game
+        self._lights = leds.Lights(only_print=True)
 
     def update(self):
         if self._text_round:
             self._text_round.text = f"R {self._game.round}"
         if self._text_turn:
             self._text_turn.text = f"T {self._game.turn}"
+        if self._side_colour in colours.PLAYER_COLOURS:
+            self._lights.turn_on(self._side_colour)
+        else:
+            self._lights.turn_off()
 
     def draw(self):
         self.title_rectangle.draw()
@@ -960,7 +967,7 @@ def main(select=None):
     from M5 import Speaker
 
     is_real = select is not None
-    if not is_real:
+    if not device.is_micropython():
         M5.begin()
         select = 1
         if len(sys.argv) > 1:
@@ -1061,7 +1068,7 @@ def main(select=None):
     elif 16 == select:
         screen_menu = ScreenMenu()
         screen_menu.draw()
-    if not is_real:
+    if not device.is_micropython():
         M5.update()
 
 

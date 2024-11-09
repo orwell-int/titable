@@ -89,7 +89,7 @@ class DecorationText(Visible, Decoration):
             height = Lcd.fontHeight()
             tx = self._cx - width // 2
             ty = self._cy - height // 2
-            Lcd.setTextColor(self._text_colour.hexa, self._fill_colour.hexa)
+            Lcd.setTextColor(self._text_colour.raw_int, self._fill_colour.raw_int)
             Lcd.drawString(self._text, tx, ty)
             self._changed = False
 
@@ -173,7 +173,7 @@ class Line(Visible):
         if not self._visible:
             return
         if self._changed:
-            Lcd.drawLine(self._x1, self._y1, self._x2, self._y2, self._colour.hexa)
+            Lcd.drawLine(self._x1, self._y1, self._x2, self._y2, self._colour.raw_int)
             self._changed = False
 
 
@@ -296,13 +296,13 @@ class Rectangle(Visible):
         if not self._visible:
             return
         if self._changed:
-            Lcd.drawRect(self.x, self.y, self.dx, self.dy, self._border_colour.hexa)
+            Lcd.drawRect(self.x, self.y, self.dx, self.dy, self._border_colour.raw_int)
             Lcd.fillRect(
                 self.x + 1,
                 self.y + 1,
                 self.dx - 2,
                 self.dy - 2,
-                self._fill_colour.hexa,
+                self._fill_colour.raw_int,
             )
             if self.decoration_text:
                 self.decoration_text.draw()
@@ -519,13 +519,13 @@ class ButtonRectangle(Visible):
             y = self.y + self._inset
             dx = self.dx - 2 * self._inset
             dy = self.dy - 2 * self._inset
-            Lcd.drawRect(x, y, dx, dy, self._current_border_colour.hexa)
+            Lcd.drawRect(x, y, dx, dy, self._current_border_colour.raw_int)
             Lcd.fillRect(
                 x + 1,
                 y + 1,
                 dx - 2,
                 dy - 2,
-                self._current_fill_colour.hexa,
+                self._current_fill_colour.raw_int,
             )
             self.decoration_text.draw()
             for deco in self._more_decoration_texts:
@@ -709,13 +709,13 @@ class ButtonCircle(Visible):
             return
         if self._changed:
             Lcd.drawCircle(
-                self.cx, self.cy, self.radius, self._current_border_colour.hexa
+                self.cx, self.cy, self.radius, self._current_border_colour.raw_int
             )
             Lcd.fillCircle(
                 self.cx,
                 self.cy,
                 self.radius - 1,
-                self._current_fill_colour.hexa,
+                self._current_fill_colour.raw_int,
             )
             self.decoration_text.draw()
 
