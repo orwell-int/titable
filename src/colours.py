@@ -98,6 +98,13 @@ class Colour:
     def __hash__(self):
         return (self.r << 16) + (self.g << 8) + self.b
 
+    @property
+    def key(self):
+        if self._pretty_name:
+            return self._pretty_name
+        else:
+            return str(self.raw_int)
+
 
 def rgb(raw_int: int):
     r = raw_int >> 16

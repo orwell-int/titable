@@ -189,17 +189,19 @@ class Screen:
         else:
             self._text_turn = None
         self._game = game
-        self._lights = leds.Lights(only_print=True)
+        self._lights = leds.Lights(only_print=False)
+        self._switch_lights = True
 
     def update(self):
         if self._text_round:
             self._text_round.text = f"R {self._game.round}"
         if self._text_turn:
             self._text_turn.text = f"T {self._game.turn}"
-        if self._side_colour in colours.PLAYER_COLOURS:
-            self._lights.turn_on(self._side_colour)
-        else:
-            self._lights.turn_off()
+        if self._switch_lights:
+            if self._side_colour in colours.PLAYER_COLOURS:
+                self._lights.turn_on(self._side_colour)
+            else:
+                self._lights.turn_off()
 
     def draw(self):
         self.title_rectangle.draw()
@@ -300,6 +302,7 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self.update()
 
     def draw(self):
         super().draw()
@@ -331,6 +334,7 @@ class ScreenSetup(Screen):
         self._buttons, self._rectangles = self._create_grid_players(
             button_font, players
         )
+        self.update()
 
     def draw(self):
         super().draw()
@@ -469,6 +473,7 @@ class ScreenSetupName(Screen):
             colours.PALETTE_LIGHT_GREEN,
             # Screen.COLOUR_BORDER,
         )
+        self.update()
 
     def draw(self):
         super().draw()
@@ -549,6 +554,7 @@ class ScreenSetupColour(Screen):
                     self._buttons.append(control)
                 else:
                     self._center_control = control
+        self.update()
 
     def draw(self):
         super().draw()
@@ -951,6 +957,8 @@ class ScreenMenu(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self._switch_lights = False
+        self.update()
 
     def draw(self):
         super().draw()
