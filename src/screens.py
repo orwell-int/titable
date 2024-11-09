@@ -735,11 +735,12 @@ class ScreenAction(Screen):
             player_button_sx,
             INNER_Y + 1,
             text_previous,
-            colours.PALETTE_LIGHT_GREEN,
+            player.previous.colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
+        self._button_previous.add_more_text(player.previous.name)
 
         text_next = "next"
         self._button_next = blocks.ButtonRectangle(
@@ -748,11 +749,12 @@ class ScreenAction(Screen):
             player_button_sx,
             INNER_Y + 1,
             text_next,
-            colours.PALETTE_LIGHT_GREEN,
+            player.next.colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
+        self._button_next.add_more_text(player.next.name)
 
         self._button_strategy = blocks.ButtonRectangle(
             self._button_previous.right - 1,
@@ -854,11 +856,12 @@ class ScreenStatus(Screen):
             player_button_sx,
             INNER_Y + 1,
             text_previous,
-            colours.PALETTE_LIGHT_GREEN,
+            player.previous.colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
+        self._button_previous.add_more_text(player.previous.name)
 
         text_next = "next"
         self._button_next = blocks.ButtonRectangle(
@@ -867,11 +870,12 @@ class ScreenStatus(Screen):
             player_button_sx,
             INNER_Y + 1,
             text_next,
-            colours.PALETTE_LIGHT_GREEN,
+            player.next.colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
+        self._button_next.add_more_text(player.next.name)
 
         y_offset = 30
         self._description = blocks.Rectangle(

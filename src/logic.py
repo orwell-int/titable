@@ -151,10 +151,12 @@ class Game:
         self._players.append(player)
 
     def get_player(self, num: int):
-        try:
-            return self._players[num - 1]
-        except IndexError:
-            return None
+        if self._ordered_players:
+            index = (num - 1) % len(self._ordered_players)
+            return self._ordered_players[index]
+        else:
+            index = (num - 1) % self._num_players
+            return self._players[index]
 
     # may not be a good idea
     @property
@@ -202,6 +204,7 @@ class Game:
         return self._available_strategies
 
     def _start_phase_strategy(self):
+        self._ordered_players = None
         self._turn += 1
         self._phase = Game.PHASE_STRATEGY
         for strategy in set(Strategies.ALL) - set(self._available_strategies.keys()):
@@ -261,7 +264,10 @@ class Game:
 
     @property
     def current_player(self):
-        return self._players[self._current_player - 1]
+        if self._ordered_players:
+            return self._ordered_players[self._current_player - 1]
+        else:
+            return self._players[self._current_player - 1]
 
     def __repr__(self):
         string = f"Game(num_players={self._num_players}, speaker={self._speaker}, "
@@ -416,6 +422,14 @@ class Player:
 
     def use_strategy(self):
         self._has_played_strategy = True
+
+    @property
+    def previous(self):
+        return self._game.get_player(self.num - 1)
+
+    @property
+    def next(self):
+        return self._game.get_player(self.num + 1)
 
     def __repr__(self):
         string = f"Player(num={self._num}, name={self._name}, "
