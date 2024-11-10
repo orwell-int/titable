@@ -830,7 +830,11 @@ def main():
             button.draw()
             print(button)
 
-    M5.update()
+    if device.is_micropython():
+        M5.update()
+    else:
+        while True:
+            M5.update()
 
 
 if "__main__" == __name__:
