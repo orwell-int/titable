@@ -49,6 +49,7 @@ class EventsHanlder:
         self._registered_once = {}
 
     def register(self, event: int, item):
+        # print(f"register(event={event}, item={item}")
         if ALL == event:
             for event in ALL_EVENTS:
                 self.register(event, item)
@@ -68,9 +69,11 @@ class EventsHanlder:
             for event in ALL_EVENTS:
                 self.unregister(event, item)
         if event in self._registered:
-            self._registered[event].remove(item)
+            if item in self._registered:
+                self._registered[event].remove(item)
         if event in self._registered_once:
-            self._registered_once[event].remove(item)
+            if item in self._registered_once:
+                self._registered_once[event].remove(item)
 
     def send_event(self, event: int, args=None):
         if event in self._registered:

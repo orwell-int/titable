@@ -28,9 +28,13 @@ class Titable:
         elif events.RESET == event:
             pass
         elif events.SETUP_COLOUR == event:
-            pass
+            player = args["player"]
+            self.switch_to_screen_setup_colour(player)
         elif events.PICK_COLOUR == event:
-            pass
+            colour = args["colour"]
+            player = args["player"]
+            # print(f"Set player ({player.name}) colour to {colour}")
+            player.colour = colour
         elif events.SWAP == event:
             pass
         elif events.STRATEGY_PLAYER == event:
@@ -74,11 +78,11 @@ class Titable:
         if ScreenTypes.WELCOME == return_screen:
             self.switch_to_screen_welcome()
         elif ScreenTypes.SETUP_PLAYERS == return_screen:
-            pass
+            self.switch_to_screen_setup()
         elif ScreenTypes.SETUP_PLAYER_NAME == return_screen:
-            pass
+            raise Exception("It is not possible to switch back to SETUP_PLAYER_NAME")
         elif ScreenTypes.SETUP_PLAYER_COLOUR == return_screen:
-            pass
+            raise Exception("It is not possible to switch back to SETUP_PLAYER_COLOUR")
         elif ScreenTypes.STRATEGY_MAIN == return_screen:
             pass
         elif ScreenTypes.STRATEGY_PLAYER == return_screen:
@@ -98,12 +102,10 @@ class Titable:
         self._current_screen = screens.ScreenSetup(self._game.players)
         self._current_screen.draw()
 
-    def switch_to_screen_setup_colour(player_index: int):
-        print("switch_to_screen_setup")
+    def switch_to_screen_setup_colour(self, player: logic.Player):
+        print("switch_to_screen_setup_colour")
         self._current_screen.hide()
-        self._current_screen = screens.ScreenSetupColour(
-            self._game.players, player_index
-        )
+        self._current_screen = screens.ScreenSetupColour(self._game.players, player)
         self._current_screen.draw()
 
 
@@ -113,14 +115,16 @@ def main():
     titable = Titable()
     if not device.is_micropython():
         M5.TITABLE = titable
-    if not device.is_micropython():
-        M5.update()
-        time.sleep(2)
-    titable._current_screen._button_setup.force_touch()
-    if not device.is_micropython():
-        M5.update()
-        time.sleep(2)
-    titable._current_screen._button_return.force_touch()
+    auto_touch = False
+    if auto_touch:
+        if not device.is_micropython():
+            M5.update()
+            time.sleep(2)
+        titable._current_screen._button_setup.force_touch()
+        if not device.is_micropython():
+            M5.update()
+            time.sleep(2)
+        titable._current_screen._button_return.force_touch()
     if not device.is_micropython():
         while True:
             M5.update()

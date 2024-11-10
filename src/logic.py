@@ -167,10 +167,11 @@ class Game:
     def num_players(self):
         return self._num_players
 
-    def pick_colour(self, colour):
+    def pick_colour(self, colour, former_colour=None):
         if colour not in self._available_colours:
             raise Exception(f"Colour {colour}, not available")
         self._available_colours.remove(colour)
+        self._available_colours.add(former_colour)
 
     @property
     def phase(self):
@@ -384,11 +385,12 @@ class Player:
 
     @colour.setter
     def colour(self, colour):
-        self._game.pick_colour(colour)
-        self._colour = colour
-        if self._observers_colour:
-            for observer in self._observers_colour:
-                observer.notify("colour", colour)
+        if self._colour != colour:
+            self._game.pick_colour(colour, self._colour)
+            self._colour = colour
+            if self._observers_colour:
+                for observer in self._observers_colour:
+                    observer.notify("colour", colour)
 
     @property
     def num(self):

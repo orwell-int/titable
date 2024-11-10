@@ -15,6 +15,7 @@ class Visible:
         super().__init__()
         self._visible = True
         self._changed = True
+        self._debug = False
 
     def hide(self):
         if self._visible:
@@ -25,6 +26,14 @@ class Visible:
         if not self._visible:
             self._visible = True
             self._changed = True
+
+    @property
+    def debug(self):
+        return self._debug
+
+    @debug.setter
+    def debug(self, debug):
+        self._debug = debug
 
 
 class Touchable:
@@ -39,15 +48,17 @@ class Touchable:
         Speaker.tone(2000, 50)
 
     def touch(self, x: int, y: int):
+        if self._debug:
+            print(f"touch({x}, {y} ~ {self.contains(x, y)}")
         if self.contains(x, y):
-            print(f"touch self._action = {self._action}")
+            # print(f"touch self._action = {self._action}")
             if self._action is not None:
                 ref_ms = device.get_timeref_ms()
                 if ref_ms >= self._next_ms:
                     self._beep()
-                    # maybe no argument needed in fact?
-                    self._action()
-                    #self._action(self._args)
+                    # forward the args this way instead of through lambda
+                    # because it is easier to debug
+                    self._action(self._args)
                     self._next_ms = self._min_delta_ms + ref_ms
 
     def force_touch(self):
@@ -67,7 +78,6 @@ class Touchable:
 
     @args.setter
     def args(self, args):
-        print(f"We need args for _action! -> args is {args}")
         self._args = args
 
 
@@ -127,10 +137,10 @@ class DecorationText(Visible, Decoration):
     def __str__(self):
         return self.__repr__()
 
-    def draw(self):
+    def draw(self, force_changed: bool = False):
         if not self._visible:
             return
-        if self._changed:
+        if self._changed or force_changed:
             Lcd.setFont(self._font)
             width = Lcd.textWidth(self._text)
             height = Lcd.fontHeight()
@@ -352,9 +362,9 @@ class Rectangle(Visible):
                 self._fill_colour.raw_int,
             )
             if self.decoration_text:
-                self.decoration_text.draw()
+                self.decoration_text.draw(force_changed=True)
             for deco in self._more_decoration_texts:
-                deco.draw()
+                deco.draw(force_changed=True)
 
     @property
     def cx(self):
@@ -561,6 +571,8 @@ class ButtonRectangle(Visible, Touchable):
     def draw(self):
         if not self._visible:
             return
+        if self._debug:
+            print(f"ButtonRectangle.draw {self}")
         if self._changed:
             x = self.x + self._inset
             y = self.y + self._inset
@@ -574,9 +586,9 @@ class ButtonRectangle(Visible, Touchable):
                 dy - 2,
                 self._current_fill_colour.raw_int,
             )
-            self.decoration_text.draw()
+            self.decoration_text.draw(force_changed=True)
             for deco in self._more_decoration_texts:
-                deco.draw()
+                deco.draw(force_changed=True)
 
     @property
     def cx(self):
@@ -764,7 +776,7 @@ class ButtonCircle(Visible, Touchable):
                 self.radius - 1,
                 self._current_fill_colour.raw_int,
             )
-            self.decoration_text.draw()
+            self.decoration_text.draw(force_changed=True)
 
     def notify(self, key, value):
         if "name" == key:
