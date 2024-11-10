@@ -9,10 +9,7 @@ from M5 import Speaker
 
 
 class Visible:
-    def __init__(
-        self,
-    ):
-        super().__init__()
+    def __init__(self):
         self._visible = True
         self._changed = True
         self._debug = False
@@ -38,7 +35,6 @@ class Visible:
 
 class Touchable:
     def __init__(self):
-        super().__init__()
         self._action = None
         self._args = None
         self._min_delta_ms = 100
@@ -413,7 +409,9 @@ class ButtonRectangle(Visible, Touchable):
         disabled_border_colour: Colour = None,
         inset=0,
     ):
-        super().__init__()
+        # super().__init__()
+        Visible.__init__(self)
+        Touchable.__init__(self)
         self.x = x
         self.y = y
         self.dx = dx
@@ -641,7 +639,9 @@ class ButtonCircle(Visible, Touchable):
         disabled_fill_colour: Colour = None,
         disabled_border_colour: Colour = None,
     ):
-        super().__init__()
+        # super().__init__()
+        Visible.__init__(self)
+        Touchable.__init__(self)
         self.cx = cx
         self.cy = cy
         self.radius = radius

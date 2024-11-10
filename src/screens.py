@@ -635,7 +635,12 @@ class ScreenSetupColour(Screen):
             colour = args["colour"]
             print(f"pick colour {colour} for player {player}")
             if self._previous_colour != colours.PLAYER_BLANK:
-                del self._colours_to_players[self._previous_colour]
+                if self._previous_colour in self._colours_to_players:
+                    del self._colours_to_players[self._previous_colour]
+                else:
+                    print(
+                        f"bug while restoring previous colour {self._previous_colour}"
+                    )
             self._colours_to_players[colour] = colour
             for button in self._buttons:
                 if button.fill_colour == colour:
@@ -1154,7 +1159,7 @@ def main(select=None):
             except:
                 pass
     else:
-        Speaker.setChannelVolume(0, 40)
+        Speaker.setVolume(15)
     Speaker.tone(2000, 50)
     if 1 == select:
         screen_welcome = ScreenWelcome()
