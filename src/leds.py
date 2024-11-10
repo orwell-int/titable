@@ -7,50 +7,6 @@ import colours
 import device
 
 
-if device.is_micropython():
-
-    import requests2
-
-    def dir_exists(filename: str):
-        try:
-            return (os.stat(filename)[0] & 0x4000) != 0
-        except OSError:
-            return False
-
-    def file_exists_and_not_empty(filename: str):
-        try:
-            stat = os.stat(filename)
-            return ((stat[0] & 0x4000) == 0) and (stat[6] > 0)
-        except OSError:
-            return False
-
-else:
-
-    import requests as requests2
-
-    def dir_exists(filename: str):
-        return os.path.exists(filename)
-
-    def file_exists_and_not_empty(filename: str):
-        return os.path.exists(filename) and os.path.getsize(filename) > 0
-
-
-def create_dirs(paths: list[str]):
-    full_path = ""
-    for path in paths:
-        if full_path:
-            full_path += "/"
-        full_path += path
-        if not dir_exists(full_path):
-            os.mkdir(full_path)
-
-
-def create_file(filename: str, content: str):
-    parts = filename.split("/")
-    create_dirs(parts[:-1])
-    open(filename, "w").write(content)
-
-
 class Lights:
     MAX_BRIGHTNESS = 100
     MODE_RELATIVE = "."
@@ -69,7 +25,7 @@ class Lights:
         self._config_url = "titable/url"
         self._config_lights = "titable/lights"
         loaded = False
-        if file_exists_and_not_empty(self._config_url):
+        if device.file_exists_and_not_empty(self._config_url):
             try:
                 self._url = open(self._config_url).read()
                 loaded = True
@@ -77,9 +33,9 @@ class Lights:
                 print(f"Invalid url file: {self._config_url}")
         if not loaded:
             self._url = "http://lights"
-            create_file(self._config_url, self._url)
+            device.create_file(self._config_url, self._url)
         loaded = False
-        if file_exists_and_not_empty(self._config_lights):
+        if device.file_exists_and_not_empty(self._config_lights):
             try:
                 self._lights = json.loads(open(self._config_lights).read())
                 loaded = True
@@ -90,18 +46,24 @@ class Lights:
                 Lights.KEY_GLOBAL_PERCENTAGE: 100,
                 Lights.KEY_BRIGHTNESS: {},
             }
-            create_file(self._config_lights, json.dumps(self._lights))
+            device.create_file(self._config_lights, json.dumps(self._lights))
         self._changed = False
+        self._last_data_str = None
 
     def write_config(self):
         print(self._lights)
         if self._changed:
             open(self._config_lights, "w").write(json.dumps(self._lights))
 
-    def _send_command_raw(self, data):
+    def _send_command_raw(self, data: dict):
+        data_str = json.dumps(data)
+        if data_str == self._last_data_str:
+            return
+        else:
+            self._last_data_str = data_str
         url = self._override_url if self._override_url else self._url
         if self._only_print:
-            print(f"{url} -> {json.dumps(data)}")
+            print(f"{url} -> {data_str}")
         else:
             requests2.post(url, json=data)
 
