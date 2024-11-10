@@ -10,6 +10,9 @@ import leds
 from M5 import Widgets
 
 
+ONLY_PRINT = True
+
+
 # there is always a title with a "back" button
 class ScreenTypes:
     # a few buttons spread vertically
@@ -107,6 +110,7 @@ class Screen:
         has_round=False,
         has_turn=False,
     ):
+        global ONLY_PRINT
         self.name = name
         self.title = title
         if title_colour is not None:
@@ -116,6 +120,7 @@ class Screen:
         if side_colour is None:
             side_colour = colours.PALETTE_DARK_GREEN
         self._side_colour = side_colour
+        self._hidden = True
         self._touchables = []
         self.title_rectangle = blocks.Rectangle(
             1,
@@ -166,7 +171,7 @@ class Screen:
         )
         if has_return:
             max_d = max(LEFT_BAR_WIDTH // 2, TITLE_HEIGHT // 2)
-            self.return_button = blocks.ButtonCircle(
+            self._button_return = blocks.ButtonCircle(
                 max_d,
                 max_d,
                 max_d - 4,
@@ -175,9 +180,9 @@ class Screen:
                 colours.PALETTE_LIGHT_GREEN,
                 # Screen.COLOUR_BORDER,
             )
-            self._touchables.append(self.return_button)
+            self._touchables.append(self._button_return)
         else:
-            self.return_button = None
+            self._button_return = None
         if has_round:
             self._text_round = TextRound(
                 self.title_colour,
@@ -193,10 +198,12 @@ class Screen:
         else:
             self._text_turn = None
         self._game = game
-        self._lights = leds.Lights(only_print=False)
+        self._lights = leds.Lights(only_print=ONLY_PRINT)
         self._switch_lights = True
 
     def touch(self, x: int, y: int):
+        if self._hidden:
+            return
         for touchable in self._touchables:
             touchable.touch(x, y)
 
@@ -211,15 +218,19 @@ class Screen:
             else:
                 self._lights.turn_off()
 
+    def hide(self):
+        self._hiiden = True
+
     def draw(self):
+        self._hidden = False
         self.title_rectangle.draw()
         if self._title_text:
             self._title_text.draw()
         self.left_bar.draw()
         self.line.draw()
         self.background.draw()
-        if self.return_button:
-            self.return_button.draw()
+        if self._button_return:
+            self._button_return.draw()
         if self._text_round:
             self._text_round.draw()
         if self._text_turn:
@@ -1020,6 +1031,7 @@ def main(select=None):
     if 1 == select:
         screen_welcome = ScreenWelcome()
         screen_welcome.draw()
+        screen_welcome._button_setup.force_touch()
     elif 2 == select:
         game = logic.Game.build_fake_game()
         screen_setup = ScreenSetup(game.players)
@@ -1094,19 +1106,20 @@ def main(select=None):
         player = game.get_next_player()
         player.strategy = Strategies.LEADERSHIP
         if 13 == select:
-            screen_setup_colour = ScreenStrategyPlayer(game, player.num)
-            screen_setup_colour.draw()
+            screen_strategy_player = ScreenStrategyPlayer(game, player.num)
+            screen_strategy_player.draw()
         elif 14 == select:
-            screen_setup_colour = ScreenAction(game)
-            screen_setup_colour.draw()
+            screen_action = ScreenAction(game)
+            screen_action.draw()
         elif 15 == select:
-            screen_setup_colour = ScreenStatus(game)
-            screen_setup_colour.draw()
+            screen_status = ScreenStatus(game)
+            screen_status.draw()
     elif 16 == select:
         screen_menu = ScreenMenu()
         screen_menu.draw()
     if not device.is_micropython():
-        M5.update()
+        while True:
+            M5.update()
 
 
 if "__main__" == __name__:

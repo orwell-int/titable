@@ -6,8 +6,9 @@ from . import Speaker
 import pygame
 
 
-DISAPLAY = None
+DISPLAY = None
 CLOCK = None
+TITABLE = None
 
 
 def begin():
@@ -21,11 +22,17 @@ def begin():
 
 
 def update():
+    global TITABLE
     global CLOCK
-    while True:
-        CLOCK.tick(30)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            pygame.display.update()
+    CLOCK.tick(30)
+    event = pygame.event.poll()
+    if event.type == pygame.QUIT:
+        pygame.quit()
+        sys.exit()
+    elif event.type == pygame.MOUSEBUTTONDOWN:
+        if 1 == event.button:
+            # left button
+            x, y = pygame.mouse.get_pos()
+            if TITABLE is not None:
+                TITABLE.touch(x, y)
+    pygame.display.update()

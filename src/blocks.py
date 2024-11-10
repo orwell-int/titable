@@ -1,5 +1,6 @@
 from colours import Colour
 import colours
+import device
 
 import M5
 from M5 import Lcd
@@ -11,6 +12,7 @@ class Visible:
     def __init__(
         self,
     ):
+        super().__init__()
         self._visible = True
         self._changed = True
 
@@ -27,10 +29,10 @@ class Visible:
 
 class Touchable:
     def __init__(self):
+        super().__init__()
         self._action = None
-        print(f"__init__ self._action = {self._action}")
         self._min_delta_ms = 100
-        self._next_ms = device.get_timeref_ms() + self._min_delta_ms
+        self._next_ms = 0
 
     def _beep(self):
         Speaker.tone(2000, 50)
@@ -49,6 +51,10 @@ class Touchable:
         self.touch(self.cx, self.cy)
 
     @property
+    def action(self):
+        return self._action
+
+    @action.setter
     def action(self, action):
         self._action = action
 
@@ -615,7 +621,7 @@ class ButtonCircle(Visible, Touchable):
         self.cx = cx
         self.cy = cy
         self.radius = radius
-        self.r2 = radius * radius
+        self._r2 = radius * radius
         # self.decoration = decoration
         self._text = text
         # self.align_decoration_h = align_decoration_h
