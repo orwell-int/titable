@@ -256,7 +256,7 @@ class Game:
                 for delta in range(self._num_players):
                     new_num = (self._current_player + delta) % 6 + 1
                     player = self.get_player(new_num)
-                    if player.can_play():
+                    if player.can_play:
                         self._current_player = new_num
                         break
             return player
@@ -396,6 +396,7 @@ class Player:
     def num(self):
         return self._num
 
+    @property
     def can_play(self):
         phase = self._game.phase
         if Game.PHASE_STRATEGY == phase:
@@ -406,6 +407,13 @@ class Player:
             # this might be more complex, but we don't really know
             # maybe it makes no sense to call this for other phases now.
             return True
+
+    @property
+    def can_pass(self):
+        phase = self._game.phase
+        if Game.PHASE_ACTION != phase:
+            return False
+        return self._has_played_strategy
 
     def set_speaker(self):
         self.game.set_speaker(self._num)

@@ -104,6 +104,7 @@ class Screen:
 
     def __init__(
         self,
+        lights: leds.Lights,
         name,
         title,
         title_colour,
@@ -114,6 +115,7 @@ class Screen:
         has_turn=False,
     ):
         global ONLY_PRINT
+        self._lights = lights
         self.name = name
         self.title = title
         if title_colour is not None:
@@ -123,6 +125,7 @@ class Screen:
         if side_colour is None:
             side_colour = colours.PALETTE_DARK_GREEN
         self._side_colour = side_colour
+        self._game = game
         self._hidden = True
         self._on_return = None
         self._touchables = []
@@ -204,8 +207,6 @@ class Screen:
             )
         else:
             self._text_turn = None
-        self._game = game
-        self._lights = leds.Lights(only_print=ONLY_PRINT)
         self._switch_lights = True
 
     @property
@@ -313,8 +314,13 @@ class Screen:
 
 
 class ScreenWelcome(Screen):
-    def __init__(self):
-        super().__init__("welcome", "TI 4 assistant", colours.WHITE, has_return=False)
+    def __init__(
+        self,
+        lights: leds.Lights,
+    ):
+        super().__init__(
+            lights, "welcome", "TI 4 assistant", colours.WHITE, has_return=False
+        )
         button_sx = 150
         button_sy = 65
         button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
@@ -375,8 +381,8 @@ class ScreenWelcome(Screen):
 
 
 class ScreenSetup(Screen):
-    def __init__(self, players: list[Player]):
-        super().__init__("setup", None, colours.WHITE)
+    def __init__(self, lights: leds.Lights, players: list[Player]):
+        super().__init__(lights, "setup", None, colours.WHITE)
         self._on_return = ScreenTypes.WELCOME
         self._players = players
         self._on_return = ScreenTypes.WELCOME
@@ -456,9 +462,11 @@ class ScreenSetupName(Screen):
     TUVWXYZABCDEFGHIJKLMNOPQRS
     """
 
-    def __init__(self, players: list[Player], player_index: int):
+    def __init__(self, lights: leds.Lights, players: list[Player], player_index: int):
         player = players[player_index]
-        super().__init__("setup name", players[player_index].name + "_", colours.WHITE)
+        super().__init__(
+            lights, "setup name", players[player_index].name + "_", colours.WHITE
+        )
         self._on_return = ScreenTypes.SETUP_PLAYERS
         button_small_font = Widgets.FONTS.DejaVu12
         button_font = Widgets.FONTS.DejaVu40
@@ -559,13 +567,17 @@ class ScreenSetupName(Screen):
 
 
 class ScreenSetupColour(Screen):
-    def __init__(self, players: list[Player], player):
+    def __init__(self, lights: leds.Lights, players: list[Player], player):
         self._colours_to_players = {}
         for other_player in players:
             if other_player.colour != colours.PLAYER_BLANK:
                 self._colours_to_players[other_player.colour] = other_player
         super().__init__(
-            "setup colour", player.name, title_colour=None, side_colour=player.colour
+            lights,
+            "setup colour",
+            player.name,
+            title_colour=None,
+            side_colour=player.colour,
         )
         self._on_return = ScreenTypes.SETUP_PLAYERS
         self._previous_colour = player.colour
@@ -663,9 +675,15 @@ class ScreenSetupColour(Screen):
 
 
 class ScreenStrategy(Screen):
-    def __init__(self, game: logic.Game):
+    def __init__(self, lights: leds.Lights, game: logic.Game):
         super().__init__(
-            "strategy", None, colours.WHITE, side_colour=None, game=game, has_round=True
+            lights,
+            "strategy",
+            None,
+            colours.WHITE,
+            side_colour=None,
+            game=game,
+            has_round=True,
         )
         self._on_return = ScreenTypes.MENU
         self._game = game
@@ -715,7 +733,7 @@ class ScreenStrategy(Screen):
 
 
 class ScreenStrategyPlayer(Screen):
-    def __init__(self, game: logic.Game, player_num: int):
+    def __init__(self, lights: leds.Lights, game: logic.Game, player_num: int):
         strategies_to_players = {}
         can_swap = True
         for player in game.players:
@@ -725,6 +743,7 @@ class ScreenStrategyPlayer(Screen):
                 can_swap = False
         player = game.get_player(player_num)
         super().__init__(
+            lights,
             "strategy player",
             player.name,
             title_colour=None,
@@ -841,10 +860,11 @@ class ScreenAction(Screen):
     Maybe a bit of spacing between the buttons if possible.
     """
 
-    def __init__(self, game: logic.Game):
+    def __init__(self, lights: leds.Lights, game: logic.Game):
         # game.current_player seems better then game.get_player(index)
         player = game.current_player
         super().__init__(
+            lights,
             "action",
             player.name,
             title_colour=None,
@@ -990,10 +1010,11 @@ class ScreenStatus(Screen):
     Maybe a bit of spacing between the buttons if possible.
     """
 
-    def __init__(self, game: logic.Game):
+    def __init__(self, lights: leds.Lights, game: logic.Game):
         # game.current_player seems better then game.get_player(index)
         player = game.current_player
         super().__init__(
+            lights,
             "action",
             player.name,
             title_colour=None,
@@ -1078,8 +1099,13 @@ class ScreenStatus(Screen):
 
 
 class ScreenMenu(Screen):
-    def __init__(self):
-        super().__init__("menu", "TI 4 assistant", colours.WHITE, has_return=True)
+    def __init__(
+        self,
+        lights: leds.Lights,
+    ):
+        super().__init__(
+            lights, "menu", "TI 4 assistant", colours.WHITE, has_return=True
+        )
         self._on_return = ScreenTypes.SAVED_SCREEN
         button_sx = 150
         button_sy = 65
@@ -1161,44 +1187,45 @@ def main(select=None):
     else:
         Speaker.setVolume(15)
     Speaker.tone(2000, 50)
+    lights = leds.Lights(only_print=True)
     if 1 == select:
-        screen_welcome = ScreenWelcome()
+        screen_welcome = ScreenWelcome(lights)
         screen_welcome.draw()
         screen_welcome._button_setup.force_touch()
     elif 2 == select:
         game = logic.Game.build_fake_game()
-        screen_setup = ScreenSetup(game.players)
+        screen_setup = ScreenSetup(lights, game.players)
         screen_setup.draw()
     elif 3 == select:
         game = logic.Game()
-        screen_setup = ScreenSetup(game.players)
+        screen_setup = ScreenSetup(lights, game.players)
         screen_setup.draw()
     elif 4 == select:
         game = logic.Game.build_fake_game()
-        screen_setup_name = ScreenSetupName(game.players, 2)
+        screen_setup_name = ScreenSetupName(lights, game.players, 2)
         screen_setup_name.draw()
     elif 5 == select:
         game = logic.Game()
-        screen_setup_name = ScreenSetupName(game.players, 2)
+        screen_setup_name = ScreenSetupName(lights, game.players, 2)
         screen_setup_name.draw()
     elif 6 == select:
         game = logic.Game.build_fake_game()
-        screen_setup_colour = ScreenSetupColour(game.players, game.players[4])
+        screen_setup_colour = ScreenSetupColour(lights, game.players, game.players[4])
         screen_setup_colour.draw()
     elif 7 == select:
         game = logic.Game()
-        screen_setup_colour = ScreenSetupColour(game.players, game.players[4])
+        screen_setup_colour = ScreenSetupColour(lights, game.players, game.players[4])
         screen_setup_colour.draw()
     elif 8 == select:
         game = logic.Game()
         player = game.get_player(2)
         player.name = "Pierre"
         player.colour = colours.PLAYER_BLACK
-        screen_setup_colour = ScreenSetupColour(game.players, game.players[4])
+        screen_setup_colour = ScreenSetupColour(lights, game.players, game.players[4])
         screen_setup_colour.draw()
     elif 9 == select:
         game = logic.Game.build_fake_game()
-        screen_setup_colour = ScreenStrategy(game)
+        screen_setup_colour = ScreenStrategy(lights, game)
         screen_setup_colour.draw()
     elif 10 == select:
         game = logic.Game.build_fake_game()
@@ -1207,12 +1234,12 @@ def main(select=None):
         player.strategy = Strategies.WARFARE
         player = game.get_next_player()
         player.strategy = Strategies.TECHNOLOGY
-        screen_setup_colour = ScreenStrategy(game)
+        screen_setup_colour = ScreenStrategy(lights, game)
         screen_setup_colour.draw()
     elif 11 == select:
         game = logic.Game.build_fake_game()
         game.start_playing()
-        screen_setup_colour = ScreenStrategyPlayer(game, player_num=5)
+        screen_setup_colour = ScreenStrategyPlayer(lights, game, player_num=5)
         screen_setup_colour.draw()
     elif 12 == select:
         game = logic.Game.build_fake_game()
@@ -1221,7 +1248,7 @@ def main(select=None):
         player.strategy = Strategies.WARFARE
         player = game.get_next_player()
         player.strategy = Strategies.TECHNOLOGY
-        screen_setup_colour = ScreenStrategyPlayer(game, player_num=5)
+        screen_setup_colour = ScreenStrategyPlayer(lights, game, player_num=5)
         screen_setup_colour.draw()
     elif 13 <= select <= 15:
         game = logic.Game.build_fake_game()
@@ -1239,16 +1266,16 @@ def main(select=None):
         player = game.get_next_player()
         player.strategy = Strategies.LEADERSHIP
         if 13 == select:
-            screen_strategy_player = ScreenStrategyPlayer(game, player.num)
+            screen_strategy_player = ScreenStrategyPlayer(lights, game, player.num)
             screen_strategy_player.draw()
         elif 14 == select:
-            screen_action = ScreenAction(game)
+            screen_action = ScreenAction(lights, game)
             screen_action.draw()
         elif 15 == select:
-            screen_status = ScreenStatus(game)
+            screen_status = ScreenStatus(lights, game)
             screen_status.draw()
     elif 16 == select:
-        screen_menu = ScreenMenu()
+        screen_menu = ScreenMenu(lights)
         screen_menu.draw()
     if not device.is_micropython():
         while True:

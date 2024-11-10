@@ -1,11 +1,13 @@
+import time
+
 import logic
 import screens
 from screens import ScreenTypes
 import events
-
+import leds
 import device
+
 import M5
-import time
 
 
 class Titable:
@@ -15,6 +17,7 @@ class Titable:
         self._current_screen_type = ScreenTypes.WELCOME
         self._current_screen = None
         self._saved_screen = None
+        self._lights = leds.Lights(only_print=True)
         self.switch_to_screen_welcome()
         events.HANDLER.register(events.ALL, self)
 
@@ -69,7 +72,7 @@ class Titable:
         print("switch_to_screen_welcome")
         if self._current_screen:
             self._current_screen.hide()
-        self._current_screen = screens.ScreenWelcome()
+        self._current_screen = screens.ScreenWelcome(self._lights)
         self._current_screen.draw()
 
     def switch_to_previous_screen(self, return_screen=None):
@@ -99,13 +102,15 @@ class Titable:
     def switch_to_screen_setup(self):
         print("switch_to_screen_setup")
         self._current_screen.hide()
-        self._current_screen = screens.ScreenSetup(self._game.players)
+        self._current_screen = screens.ScreenSetup(self._lights, self._game.players)
         self._current_screen.draw()
 
     def switch_to_screen_setup_colour(self, player: logic.Player):
         print("switch_to_screen_setup_colour")
         self._current_screen.hide()
-        self._current_screen = screens.ScreenSetupColour(self._game.players, player)
+        self._current_screen = screens.ScreenSetupColour(
+            self._lights, self._game.players, player
+        )
         self._current_screen.draw()
 
 
