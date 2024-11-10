@@ -6,6 +6,7 @@ from logic import Strategies
 import logic
 import device
 import leds
+import events
 
 from M5 import Widgets
 
@@ -39,6 +40,8 @@ class ScreenTypes:
     STATUS_PLAYER = 7
     # Menu
     MENU = 8
+    # Screen opened before the menu
+    SAVED_SCREEN = 9
 
 
 MAX_X = 320
@@ -121,6 +124,7 @@ class Screen:
             side_colour = colours.PALETTE_DARK_GREEN
         self._side_colour = side_colour
         self._hidden = True
+        self._on_return = None
         self._touchables = []
         self.title_rectangle = blocks.Rectangle(
             1,
@@ -180,6 +184,9 @@ class Screen:
                 colours.PALETTE_LIGHT_GREEN,
                 # Screen.COLOUR_BORDER,
             )
+            self._button_return.action = lambda: events.HANDLER.send_event(
+                events.RETURN
+            )
             self._touchables.append(self._button_return)
         else:
             self._button_return = None
@@ -200,6 +207,14 @@ class Screen:
         self._game = game
         self._lights = leds.Lights(only_print=ONLY_PRINT)
         self._switch_lights = True
+
+    @property
+    def on_return(self):
+        return self._on_return
+
+    @on_return.setter
+    def on_return(self, on_return):
+        self._on_return = on_return
 
     def touch(self, x: int, y: int):
         if self._hidden:
@@ -236,7 +251,7 @@ class Screen:
         if self._text_turn:
             self._text_turn.draw()
 
-    def _create_grid_players(self, button_font, players):
+    def _create_grid_players(self, button_font, players, event):
         num_columns = 2
         num_lines = 3
         button_sx = (INNER_X + 2) // num_columns
@@ -265,6 +280,8 @@ class Screen:
                         Screen.COLOUR_BORDER,
                         button_font,
                     )
+                    args = {"player": player}
+                    button.action = lambda: events.HANDLER.send_event(event, args)
                     buttons.append(button)
                 else:
                     rectangle = blocks.Rectangle(
@@ -300,6 +317,7 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self._button_setup.action = lambda: events.HANDLER.send_event(events.SETUP)
         play_or_resume = "Play"
         self._button_play = blocks.ButtonRectangle(
             button_x_offset,
@@ -311,6 +329,7 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self._button_play.action = lambda: events.HANDLER.send_event(events.PLAY)
         self._button_reset = blocks.ButtonRectangle(
             button_x_offset,
             TITLE_HEIGHT + dy + (button_sy + dy) * 2,
@@ -321,6 +340,7 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self._button_reset.action = lambda: events.HANDLER.send_event(events.RESET)
         self._touchables.append(self._button_setup)
         self._touchables.append(self._button_play)
         self._touchables.append(self._button_reset)
@@ -336,7 +356,9 @@ class ScreenWelcome(Screen):
 class ScreenSetup(Screen):
     def __init__(self, players: list[Player]):
         super().__init__("setup", None, colours.WHITE)
+        self._on_return = ScreenTypes.WELCOME
         self._players = players
+        self._on_return = ScreenTypes.WELCOME
         button_font = Widgets.FONTS.DejaVu18
         dy = 4
         top_button_sy = TITLE_HEIGHT - dy * 2
@@ -354,7 +376,9 @@ class ScreenSetup(Screen):
             button_font,
         )
         self._buttons, self._rectangles = self._create_grid_players(
-            button_font, players
+            button_font,
+            players,
+            events.SETUP_COLOUR,
         )
         self._touchables.extend(self._buttons)
         self.update()
@@ -413,8 +437,8 @@ class ScreenSetupName(Screen):
 
     def __init__(self, players: list[Player], player_index: int):
         player = players[player_index]
-        super().__init__("setup colour", player.name, player.colour)
         super().__init__("setup name", players[player_index].name + "_", colours.WHITE)
+        self._on_return = ScreenTypes.SETUP_PLAYERS
         button_small_font = Widgets.FONTS.DejaVu12
         button_font = Widgets.FONTS.DejaVu40
         rectangle_font = Widgets.FONTS.DejaVu18
@@ -524,6 +548,7 @@ class ScreenSetupColour(Screen):
         super().__init__(
             "setup colour", player.name, title_colour=None, side_colour=player.colour
         )
+        self._on_return = ScreenTypes.SETUP_PLAYERS
         button_font = Widgets.FONTS.DejaVu18
         num_columns = 3
         num_lines = 3
@@ -565,6 +590,22 @@ class ScreenSetupColour(Screen):
                         colour,
                         Screen.COLOUR_BORDER,
                     )
+                    if is_colour:
+                        args = {
+                            "colour": colour,
+                        }
+                        control.action = lambda: events.HANDLER.send_event(
+                            events.PICK_COLOUR , args
+                        )
+                    else:
+                        if can_swap:
+                            control.action = lambda: events.HANDLER.send_event(
+                                events.SWAP
+                            )
+                        else:
+                            control.action = lambda: events.HANDLER.send_event(
+                                events.RETURN
+                            )
                     if disable:
                         control.enabled = False
                 else:
@@ -596,6 +637,7 @@ class ScreenStrategy(Screen):
         super().__init__(
             "strategy", None, colours.WHITE, side_colour=None, game=game, has_round=True
         )
+        self._on_return = ScreenTypes.MENU
         self._game = game
         self._players = game.players
         button_font = Widgets.FONTS.DejaVu18
@@ -614,8 +656,9 @@ class ScreenStrategy(Screen):
             # Screen.COLOUR_BORDER,
             button_font,
         )
+        self._button_end_phase.action = lambda: events.HANDLER.send_event(events.NEXT)
         self._buttons, self._rectangles = self._create_grid_players(
-            button_font, self._players
+            button_font, self._players, events.STRATEGY_PLAYER
         )
         for button, player in zip(self._buttons, self._players):
             button.add_more_text(Strategies.to_short_string(player.strategy))
@@ -650,7 +693,7 @@ class ScreenStrategyPlayer(Screen):
                 can_swap = False
         player = game.get_player(player_num)
         super().__init__(
-            "setup colour",
+            "strategy player",
             player.name,
             title_colour=None,
             side_colour=player.colour,
@@ -659,6 +702,7 @@ class ScreenStrategyPlayer(Screen):
             has_turn=True,
         )
         self._game = game
+        self._on_return = ScreenTypes.STRATEGY_MAIN
         button_font = Widgets.FONTS.DejaVu18
         num_columns = 3
         num_lines = 3
@@ -673,15 +717,27 @@ class ScreenStrategyPlayer(Screen):
             for column in range(num_columns):
                 disable = False
                 is_colour = not ((line == 1) and (column == 1))
+                args = None
                 if is_colour:
                     colour = Strategies.to_colour(strategy_index)
                     is_button = True
                     if strategy_index in strategies_to_players:
-                        text = strategies_to_players[strategy_index].name
-                        disable = not can_swap
+                        other_player = strategies_to_players[strategy_index]
+                        text = other_player.name
+                        if other_player == player:
+                            disable = True
+                        else:
+                            disable = not can_swap
+                        args = {
+                            "player": other_player,
+                            "strategy": strategy_index,
+                        }
                     else:
                         text = f"{strategy_index} [{game.available_strategies[strategy_index]}]"
                         disable = can_swap
+                        args = {
+                            "strategy": strategy_index,
+                        }
                     strategy_index += 1
                 else:
                     colour = colours.PLAYER_BLANK
@@ -699,6 +755,10 @@ class ScreenStrategyPlayer(Screen):
                         text,
                         colour,
                         Screen.COLOUR_BORDER,
+                    )
+                    control.action = lambda: events.HANDLER.send_event(
+                        events.PICK_STRATEGY,
+                        args
                     )
                     if disable:
                         control.enabled = False
@@ -762,6 +822,7 @@ class ScreenAction(Screen):
             has_turn=True,
         )
         self._game = game
+        self._on_return = ScreenTypes.MENU
         button_font = Widgets.FONTS.DejaVu12
         x_weight_player_button = 2.5
         x_weight_action_button = 3
@@ -784,6 +845,9 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
+        self._button_previous.action = lambda: events.HANDLER.send_event(
+            events.PREVIOUS
+        )
         self._button_previous.add_more_text(player.previous.name)
 
         text_next = "next"
@@ -798,6 +862,7 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
+        self._button_next.action = lambda: events.HANDLER.send_event(events.NEXT)
         self._button_next.add_more_text(player.next.name)
 
         self._button_strategy = blocks.ButtonRectangle(
@@ -811,6 +876,9 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
+        self._button_strategy.action = lambda: events.HANDLER.send_event(
+            events.PLAY_STRATEGY
+        )
 
         self._button_tactical_and_component = blocks.ButtonRectangle(
             self._button_previous.right - 1,
@@ -823,19 +891,31 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
+        self._button_tactical_and_component.action = lambda: events.HANDLER.send_event(
+            events.PLAY_TACTICAL_ORCOMPONENT
+        )
         self._button_tactical_and_component.add_more_text("/")
         self._button_tactical_and_component.add_more_text("Component")
 
+        if player.can_pass:
+            skip_or_pass = "Pass"
+            event = events.PLAY_PASS
+        else:
+            skip_or_pass = "Skip"
+            event = events.PLAY_SKIP
         self._button_skip_or_pass = blocks.ButtonRectangle(
             self._button_previous.right - 1,
             self._button_tactical_and_component.bottom - 1,
             self._button_next.left - self._button_previous.right + 2,
             MAX_Y - (self._button_tactical_and_component.bottom - 1),
-            "Pass",
+            skip_or_pass,
             colours.GRAY,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
+        )
+        self._button_tactical_and_component.action = lambda: events.HANDLER.send_event(
+            event
         )
         self._touchables.append(self._button_previous)
         self._touchables.append(self._button_next)
@@ -887,6 +967,7 @@ class ScreenStatus(Screen):
             has_turn=True,
         )
         self._game = game
+        self._on_return = ScreenTypes.MENU
         button_font = Widgets.FONTS.DejaVu12
         x_weight_player_button = 2.5
         x_weight_action_button = 3
@@ -909,6 +990,9 @@ class ScreenStatus(Screen):
             button_font,
             inset=2,
         )
+        self._button_previous.action = lambda: events.HANDLER.send_event(
+            events.PREVIOUS
+        )
         self._button_previous.add_more_text(player.previous.name)
 
         text_next = "next"
@@ -923,6 +1007,7 @@ class ScreenStatus(Screen):
             button_font,
             inset=2,
         )
+        self._button_next.action = lambda: events.HANDLER.send_event(events.NEXT)
         self._button_next.add_more_text(player.next.name)
 
         y_offset = 30
@@ -957,6 +1042,7 @@ class ScreenStatus(Screen):
 class ScreenMenu(Screen):
     def __init__(self):
         super().__init__("menu", "TI 4 assistant", colours.WHITE, has_return=True)
+        self._on_return = ScreenTypes.SAVED_SCREEN
         button_sx = 150
         button_sy = 65
         button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
@@ -974,6 +1060,7 @@ class ScreenMenu(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self._button_welcome.action = lambda: events.HANDLER.send_event(events.WELCOME)
         self._button_reset_phase = blocks.ButtonRectangle(
             button_x_offset,
             TITLE_HEIGHT + dy + button_sy + dy,
@@ -984,6 +1071,9 @@ class ScreenMenu(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
+        self._button_reset_phase.action = lambda: events.HANDLER.send_event(
+            events.RESET_PHASE
+        )
         self._button_reset_round = blocks.ButtonRectangle(
             button_x_offset,
             TITLE_HEIGHT + dy + (button_sy + dy) * 2,
@@ -993,6 +1083,9 @@ class ScreenMenu(Screen):
             colours.PALETTE_LIGHT_GREEN,
             Screen.COLOUR_BORDER,
             button_font,
+        )
+        self._button_reset_round.action = lambda: events.HANDLER.send_event(
+            events.RESET_ROUND
         )
         self._switch_lights = False
         self._touchables.append(self._button_welcome)

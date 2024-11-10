@@ -31,6 +31,7 @@ class Touchable:
     def __init__(self):
         super().__init__()
         self._action = None
+        self._args = None
         self._min_delta_ms = 100
         self._next_ms = 0
 
@@ -44,7 +45,9 @@ class Touchable:
                 ref_ms = device.get_timeref_ms()
                 if ref_ms >= self._next_ms:
                     self._beep()
+                    # maybe no argument needed in fact?
                     self._action()
+                    #self._action(self._args)
                     self._next_ms = self._min_delta_ms + ref_ms
 
     def force_touch(self):
@@ -57,6 +60,15 @@ class Touchable:
     @action.setter
     def action(self, action):
         self._action = action
+
+    @property
+    def args(self):
+        return self._args
+
+    @args.setter
+    def args(self, args):
+        print(f"We need args for _action! -> args is {args}")
+        self._args = args
 
 
 class Decoration:
