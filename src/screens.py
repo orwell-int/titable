@@ -595,13 +595,18 @@ class ScreenSetupColour(Screen):
         index = 0
         for column in range(num_columns):
             for line in range(num_lines):
+                highlight = False
                 disable = False
                 is_colour = not ((line == 1) and (column == 1))
                 if is_colour:
                     colour = colours.PLAYER_COLOURS[index]
                     if colour in self._colours_to_players:
-                        text = self._colours_to_players[colour].name
-                        disable = True
+                        other_player = self._colours_to_players[colour]
+                        text = other_player.name
+                        if player == other_player:
+                            highlight = True
+                        else:
+                            disable = True
                     else:
                         text = colour.pretty_name[len("player ") :]
                     index += 1
@@ -633,6 +638,8 @@ class ScreenSetupColour(Screen):
                     )
                 if disable:
                     control.enabled = False
+                if highlight:
+                    control.highlighted = True
                 if is_colour:
                     self._buttons.append(control)
                 else:
@@ -657,10 +664,10 @@ class ScreenSetupColour(Screen):
             for button in self._buttons:
                 if button.fill_colour == colour:
                     button.text = player.name
-                    button.enabled = False
+                    button.highlighted = True
                 elif button.fill_colour == self._previous_colour:
                     button.text = self._previous_colour.pretty_name[len("player ") :]
-                    button.enabled = True
+                    button.highlighted = False
             self._previous_colour = colour
             self.side_colour = colour
             self.draw()

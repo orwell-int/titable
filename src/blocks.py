@@ -349,6 +349,7 @@ class Rectangle(Visible):
         if not self._visible:
             return
         if self._changed:
+            self._changed = False
             Lcd.drawRect(self.x, self.y, self.dx, self.dy, self._border_colour.raw_int)
             Lcd.fillRect(
                 self.x + 1,
@@ -359,8 +360,13 @@ class Rectangle(Visible):
             )
             if self.decoration_text:
                 self.decoration_text.draw(force_changed=True)
+            force_children = True
+        else:
+            force_children = False
+        if self.decoration_text:
+            self.decoration_text.draw(force_changed=force_children)
             for deco in self._more_decoration_texts:
-                deco.draw(force_changed=True)
+                deco.draw(force_changed=force_children)
 
     @property
     def cx(self):
@@ -437,6 +443,7 @@ class ButtonRectangle(Visible, Touchable):
             font,
         )
         self._enabled = True
+        self._highlighted = False
         self._more_decoration_texts = []
         self._inset = inset
 
@@ -521,6 +528,7 @@ class ButtonRectangle(Visible, Touchable):
         string += f"text_colour={self._text_colour}, "
         string += f"disabled_text_colour={self._disabled_text_colour}, "
         string += f"enabled={self._enabled}, "
+        string += f"highlighted={self._highlighted}, "
         string += f"changed={self._changed})"
         return string
 
@@ -566,27 +574,53 @@ class ButtonRectangle(Visible, Touchable):
                     deco.fill_colour = disabled_fill_colour
             self.enabled = value
 
+    @property
+    def highlighted(self):
+        return self._highlighted
+
+    @highlighted.setter
+    def highlighted(self, value):
+        if self._highlighted != value:
+            self._highlighted = value
+            self._changed = True
+
     def draw(self):
         if not self._visible:
             return
         if self._debug:
             print(f"ButtonRectangle.draw {self}")
         if self._changed:
+            self._changed = False
             x = self.x + self._inset
             y = self.y + self._inset
             dx = self.dx - 2 * self._inset
             dy = self.dy - 2 * self._inset
-            Lcd.drawRect(x, y, dx, dy, self._current_border_colour.raw_int)
+            if self._highlighted:
+                layers = 5
+            else:
+                layers = 1
+            for layer in range(layers):
+                Lcd.drawRect(
+                    x + layer,
+                    y + layer,
+                    dx - 2 * layer,
+                    dy - 2 * layer,
+                    self._current_border_colour.raw_int,
+                )
             Lcd.fillRect(
-                x + 1,
-                y + 1,
-                dx - 2,
-                dy - 2,
+                x + layers,
+                y + layers,
+                dx - 2 * layers,
+                dy - 2 * layers,
                 self._current_fill_colour.raw_int,
             )
-            self.decoration_text.draw(force_changed=True)
+            force_children = True
+        else:
+            force_children = False
+        if self.decoration_text:
+            self.decoration_text.draw(force_changed=force_children)
             for deco in self._more_decoration_texts:
-                deco.draw(force_changed=True)
+                deco.draw(force_changed=force_children)
 
     @property
     def cx(self):
@@ -667,6 +701,7 @@ class ButtonCircle(Visible, Touchable):
             font,
         )
         self._enabled = True
+        self._highlighted = False
 
     @property
     def text(self):
@@ -763,20 +798,43 @@ class ButtonCircle(Visible, Touchable):
                 self.decoration_text.fill_colour = disabled_fill_colour
             self.enabled = value
 
+    @property
+    def highlighted(self):
+        return self._highlighted
+
+    @highlighted.setter
+    def highlighted(self, value):
+        if self._highlighted != value:
+            self._highlighted = value
+            self._changed = True
+
     def draw(self):
         if not self._visible:
             return
         if self._changed:
-            Lcd.drawCircle(
-                self.cx, self.cy, self.radius, self._current_border_colour.raw_int
-            )
+            self._changed = False
+            if self._highlighted:
+                layers = 5
+            else:
+                layers = 1
+            for layer in range(layers):
+                Lcd.drawCircle(
+                    self.cx,
+                    self.cy,
+                    self.radius - layer,
+                    self._current_border_colour.raw_int,
+                )
             Lcd.fillCircle(
                 self.cx,
                 self.cy,
-                self.radius - 1,
+                self.radius - layers,
                 self._current_fill_colour.raw_int,
             )
-            self.decoration_text.draw(force_changed=True)
+            force_children = True
+        else:
+            force_children = False
+        if self.decoration_text:
+            self.decoration_text.draw(force_changed=force_children)
 
     def notify(self, key, value):
         if "name" == key:
