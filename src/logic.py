@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Union
+
 import colours
 from colours import Colour
 
@@ -94,9 +98,9 @@ class Game:
         turn: int = 0,
         round: int = 0,
         phase: int = PHASE_STRATEGY,
-        available_strategies: dict = None,
-        players: list = None,
-        available_colours: set[Colour] = None,
+        available_strategies: Union[dict, None] = None,
+        players: Union[list[Player], None] = None,
+        available_colours: Union[set[Colour], None] = None,
     ):
         self._num_players = num_players
         self._speaker = speaker
@@ -139,15 +143,14 @@ class Game:
                     colours.PLAYER_YELLOW,
                 ]
             )
-        self._ordered_players = None
+        self._ordered_players = []
 
     def _add_player(self):
         num = len(self._players) + 1
         if num > 6:
             print("Too many players")
             return None
-        player = Player(num, f"Player {num}", colours.PLAYER_BLANK)
-        player.set_game(self)
+        player = Player(self, num, f"Player {num}", colours.PLAYER_BLANK)
         self._players.append(player)
 
     def get_player(self, num: int):
@@ -167,11 +170,12 @@ class Game:
     def num_players(self):
         return self._num_players
 
-    def pick_colour(self, colour, former_colour=None):
+    def pick_colour(self, colour: Colour, former_colour: Union[Colour, None] = None):
         if colour not in self._available_colours:
             raise Exception(f"Colour {colour}, not available")
         self._available_colours.remove(colour)
-        self._available_colours.add(former_colour)
+        if former_colour:
+            self._available_colours.add(former_colour)
 
     @property
     def phase(self):
@@ -205,7 +209,7 @@ class Game:
         return self._available_strategies
 
     def _start_phase_strategy(self):
-        self._ordered_players = None
+        self._ordered_players = []
         self._turn += 1
         self._phase = Game.PHASE_STRATEGY
         for strategy in set(Strategies.ALL) - set(self._available_strategies.keys()):
@@ -215,6 +219,15 @@ class Game:
         for strategy in self._available_strategies.keys():
             self._available_strategies[strategy] += 1
         self._ordered_players = self.order_players()
+
+    def _end_phase_action(self):
+        raise Exception("Cannot only get next player in play state")
+
+    def _end_phase_status(self):
+        raise Exception("Cannot only get next player in play state")
+
+    def _end_phase_agenda(self):
+        raise Exception("Cannot only get next player in play state")
 
     def order_players(self):
         return sorted(self._players, key=lambda x: x._strategy * 10 + x._num)
@@ -242,7 +255,7 @@ class Game:
             self._phase = Game.PHASE_STRATEGY
             self._next_round()
 
-    def get_next_player(self):
+    def get_next_player(self) -> Player:
         if Game.STATE_PLAY != self._state:
             raise Exception("Cannot only get next player in play state")
         if Game.PHASE_STRATEGY == self._phase:
@@ -259,6 +272,8 @@ class Game:
                     if player.can_play:
                         self._current_player = new_num
                         break
+            if player is None:
+                raise Exception("Bug: no player found in get_next_player")
             return player
         elif Game.PHASE_ACTION == self._phase:
             raise Exception("Not implemented yet!")
@@ -324,6 +339,7 @@ class Player:
     # FACTION_NOT_IMPLEMENTED = 0
     def __init__(
         self,
+        game: Game,
         num: int,
         name: str,
         colour: Colour,
@@ -333,7 +349,7 @@ class Player:
         has_played_strategy: bool = False,
         strategy: int = Strategies.NONE,
     ):
-        self._game = None
+        self._game = game
         self._num = num
         self._name = name
         self._colour = colour
@@ -353,13 +369,10 @@ class Player:
             self._observers_colour.append(observer)
 
     def remove_observer_name(self, observer):
-        self._observers_name.remover(observer)
+        self._observers_name.remove(observer)
 
     def remove_observer_colour(self, observer):
-        self._observers_colour.remover(observer)
-
-    def set_game(self, game):
-        self._game = game
+        self._observers_colour.remove(observer)
 
     @property
     def score(self):
@@ -416,7 +429,7 @@ class Player:
         return self._has_played_strategy
 
     def set_speaker(self):
-        self.game.set_speaker(self._num)
+        self._game.set_speaker(self._num)
 
     def is_speaker(self):
         return self._game.is_speaker(self.num)

@@ -66,6 +66,7 @@ class Titable:
             pass
 
     def touch(self, x: int, y: int):
+        assert self._current_screen is not None
         self._current_screen.touch(x, y)
 
     def switch_to_screen_welcome(self):
@@ -76,6 +77,7 @@ class Titable:
         self._current_screen.draw()
 
     def switch_to_previous_screen(self, return_screen=None):
+        assert self._current_screen is not None
         if return_screen is None:
             return_screen = self._current_screen.on_return
         if ScreenTypes.WELCOME == return_screen:
@@ -101,12 +103,14 @@ class Titable:
 
     def switch_to_screen_setup(self):
         print("switch_to_screen_setup")
+        assert self._current_screen is not None
         self._current_screen.hide()
         self._current_screen = screens.ScreenSetup(self._lights, self._game.players)
         self._current_screen.draw()
 
     def switch_to_screen_setup_colour(self, player: logic.Player):
         print("switch_to_screen_setup_colour")
+        assert self._current_screen is not None
         self._current_screen.hide()
         self._current_screen = screens.ScreenSetupColour(
             self._lights, self._game.players, player

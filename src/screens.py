@@ -1180,10 +1180,9 @@ def main(select=None):
 
     from M5 import Speaker
 
-    is_real = select is not None
+    select = 1
     if not device.is_micropython():
         M5.begin()
-        select = 1
         if len(sys.argv) > 1:
             try:
                 param = int(sys.argv[1])
