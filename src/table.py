@@ -17,7 +17,7 @@ class Titable:
         self._current_screen_type = ScreenTypes.WELCOME
         self._current_screen = None
         self._saved_screen = None
-        self._lights = leds.Lights(only_print=True)
+        self._lights = leds.Lights(only_print=False)
         self.switch_to_screen_welcome()
         events.HANDLER.register(events.ALL, self)
 

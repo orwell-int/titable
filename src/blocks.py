@@ -1,5 +1,3 @@
-from typing import Union
-
 from colours import Colour
 import colours
 import device
@@ -240,7 +238,7 @@ class Rectangle(Visible):
         dx: int,
         dy: int,
         # decoration,  # text or image
-        text: Union[str, None],
+        text,
         # align_decoration_h: int,
         # align_decoration_v: int,
         fill_colour: Colour,
@@ -413,8 +411,8 @@ class ButtonRectangle(Visible, Touchable):
         fill_colour: Colour,
         border_colour: Colour = colours.WHITE,
         font: int = Widgets.FONTS.DejaVu12,
-        disabled_fill_colour: Union[Colour, None] = None,
-        disabled_border_colour: Union[Colour, None] = None,
+        disabled_fill_colour = None,
+        disabled_border_colour = None,
         inset=0,
     ):
         # super().__init__()
@@ -672,8 +670,8 @@ class ButtonCircle(Visible, Touchable):
         fill_colour: Colour,
         border_colour: Colour = colours.WHITE,
         font: int = Widgets.FONTS.DejaVu12,
-        disabled_fill_colour: Union[Colour, None] = None,
-        disabled_border_colour: Union[Colour, None] = None,
+        disabled_fill_colour = None,
+        disabled_border_colour = None,
     ):
         # super().__init__()
         Visible.__init__(self)

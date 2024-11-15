@@ -11,9 +11,6 @@ import events
 from M5 import Widgets
 
 
-ONLY_PRINT = True
-
-
 # there is always a title with a "back" button
 class ScreenTypes:
     # a few buttons spread vertically
@@ -114,7 +111,6 @@ class Screen:
         has_round=False,
         has_turn=False,
     ):
-        global ONLY_PRINT
         self._lights = lights
         self.name = name
         self.title = title
@@ -229,14 +225,21 @@ class Screen:
 
     @side_colour.setter
     def side_colour(self, side_colour):
+        if self._side_colour == side_colour:
+            return
         self._side_colour = side_colour
         self.title_rectangle.fill_colour = side_colour
         if self._title_text:
             self._title_text.fill_colour = side_colour
             self._title_text.text_colour = side_colour.get_contrasting_text()
-            print(self._title_text)
+            #print(self._title_text)
         self.left_bar.fill_colour = side_colour
         self.line.colour = side_colour
+        if self._switch_lights:
+            if self._side_colour in colours.PLAYER_COLOURS:
+                self._lights.turn_on(self._side_colour)
+            else:
+                self._lights.turn_off()
 
     def update(self):
         if self._text_round:
@@ -646,6 +649,7 @@ class ScreenSetupColour(Screen):
                     self._center_control = control
         self._touchables.extend(self._buttons)
         self._touchables.append(self._center_control)
+        self._switch_lights = True
         self.update()
 
     def do_event(self, event, args):

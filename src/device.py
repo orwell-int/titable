@@ -12,8 +12,6 @@ if is_micropython():
     def get_timeref_ms():
         return time.ticks_ms()
 
-    import requests2
-
     def dir_exists(filename: str):
         try:
             return (os.stat(filename)[0] & 0x4000) != 0
@@ -31,8 +29,6 @@ else:
 
     def get_timeref_ms():
         return time.monotonic() * 1000
-
-    import requests as requests2
 
     def dir_exists(filename: str):
         return os.path.exists(filename)

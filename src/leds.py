@@ -7,6 +7,11 @@ import colours
 import device
 
 
+if device.is_micropython():
+    import requests2
+else:
+    import requests as requests2
+
 class Lights:
     MAX_BRIGHTNESS = 100
     MODE_RELATIVE = "."
@@ -149,22 +154,22 @@ class Lights:
                 self._changed = True
 
     def get_mode(self, colour: Colour) -> str:
-        conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
         try:
+            conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
             return conf[Lights.KEY_MODE]
         except KeyError:
             return None
 
     def get_percentage(self, colour: Colour) -> int:
-        conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
         try:
+            conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
             return conf[Lights.KEY_PERCENTAGE]
         except KeyError:
             return None
 
     def get_colour(self, colour: Colour) -> list[int]:
-        conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
         try:
+            conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
             return conf[Lights.KEY_COLOUR]
         except KeyError:
             return None
@@ -260,13 +265,23 @@ def main():
         while True:
             lights.turn_on(colours.PLAYER_YELLOW)
             time.sleep(2)
+            lights.turn_on(colours.PLAYER_NEUTRAL)
+            time.sleep(2)
             lights.turn_on(colours.PLAYER_BLUE)
+            time.sleep(2)
+            lights.turn_on(colours.PLAYER_NEUTRAL)
             time.sleep(2)
             lights.turn_on(colours.PLAYER_BLACK)
             time.sleep(2)
+            lights.turn_on(colours.PLAYER_NEUTRAL)
+            time.sleep(2)
             lights.turn_on(colours.PLAYER_GREEN)
             time.sleep(2)
+            lights.turn_on(colours.PLAYER_NEUTRAL)
+            time.sleep(2)
             lights.turn_on(colours.PLAYER_ORANGE)
+            time.sleep(2)
+            lights.turn_on(colours.PLAYER_NEUTRAL)
             time.sleep(2)
     else:
         while True:
@@ -275,6 +290,8 @@ def main():
                     f"{colour} | {colour.raw_int} -> {colour.get_perceived_lightness()}"
                 )
                 lights.turn_on(colour)
+                time.sleep(2)
+                lights.turn_on(colours.PLAYER_NEUTRAL)
                 time.sleep(2)
 
 

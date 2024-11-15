@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import Union
-
 import colours
 from colours import Colour
 
@@ -98,9 +94,9 @@ class Game:
         turn: int = 0,
         round: int = 0,
         phase: int = PHASE_STRATEGY,
-        available_strategies: Union[dict, None] = None,
-        players: Union[list[Player], None] = None,
-        available_colours: Union[set[Colour], None] = None,
+        available_strategies = None,
+        players = None,
+        available_colours = None,
     ):
         self._num_players = num_players
         self._speaker = speaker
@@ -170,7 +166,7 @@ class Game:
     def num_players(self):
         return self._num_players
 
-    def pick_colour(self, colour: Colour, former_colour: Union[Colour, None] = None):
+    def pick_colour(self, colour: Colour, former_colour = None):
         if colour not in self._available_colours:
             raise Exception(f"Colour {colour}, not available")
         self._available_colours.remove(colour)
@@ -255,7 +251,7 @@ class Game:
             self._phase = Game.PHASE_STRATEGY
             self._next_round()
 
-    def get_next_player(self) -> Player:
+    def get_next_player(self) -> 'Player':
         if Game.STATE_PLAY != self._state:
             raise Exception("Cannot only get next player in play state")
         if Game.PHASE_STRATEGY == self._phase:
