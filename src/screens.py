@@ -21,24 +21,28 @@ class ScreenTypes:
     SETUP_PLAYER_NAME = 2
     # 3 x 3 buttons (colour -> name + disabled as colours get picked)
     SETUP_PLAYER_COLOUR = 3
+    # 3 x 2 for players
+    #  first round: third row is yes / no
+    #  other rounds (only if yes): previous / next
+    NAALU_ABILITY = 4
     # players 2 x 3 (with selected strategy) with button to end strategy phase
     # (button only enabled when every player has picked)
     # shows round (and turn) in left bar
-    STRATEGY_MAIN = 4
+    STRATEGY_MAIN = 5
     # player dedicated 3 x 3 buttons (number [trade goods] -> name)
     # add swap option in the middle when every player has picked something
     # shows round (and turn) in left bar
-    STRATEGY_PLAYER = 5
+    STRATEGY_PLAYER = 6
     # player dedicated three vertical buttons to chose type of action + one for next (player / phase)
     # should it include one button to go back to previous?
     # shows round and turn in left bar
-    ACTION_PLAYER = 6
+    ACTION_PLAYER = 7
     # player dedicated one button for previous + text + one for next (player / round)
-    STATUS_PLAYER = 7
+    STATUS_PLAYER = 8
     # Menu
-    MENU = 8
+    MENU = 9
     # Screen opened before the menu
-    SAVED_SCREEN = 9
+    SAVED_SCREEN = 10
 
 
 MAX_X = 320
@@ -685,6 +689,20 @@ class ScreenSetupColour(Screen):
         self._center_control.draw()
 
 
+class ScreenNaaluAbility(Screen):
+    def __init__(self, lights: leds.Lights, game: logic.Game):
+        super().__init__(
+            lights,
+            "naalu",
+            None,
+            colours.WHITE,
+            side_colour=None,
+            game=game,
+            has_round=True,
+        )
+        self._on_return = ScreenTypes.MENU
+
+
 class ScreenStrategy(Screen):
     def __init__(self, lights: leds.Lights, game: logic.Game):
         super().__init__(
@@ -696,7 +714,7 @@ class ScreenStrategy(Screen):
             game=game,
             has_round=True,
         )
-        self._on_return = ScreenTypes.MENU
+        self._on_return = ScreenTypes.NAALU_ABILITY
         self._game = game
         self._players = game.players
         button_font = Widgets.FONTS.DejaVu18
