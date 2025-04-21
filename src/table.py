@@ -11,15 +11,16 @@ import M5
 
 
 class Titable:
-    def __init__(self):
+    def __init__(self, leds_only_print=False):
         self._game = logic.Game()
         self._screens = {}
         self._current_screen_type = ScreenTypes.WELCOME
         self._current_screen = None
         self._saved_screen = None
-        self._lights = leds.Lights(only_print=False)
+        self._lights = leds.Lights(only_print=leds_only_print)
         self.switch_to_screen_welcome()
         events.HANDLER.register(events.ALL, self)
+        self._touched = False
 
     def do_event(self, event: int, args):
         if events.RETURN == event:
@@ -66,7 +67,14 @@ class Titable:
             pass
 
     def touch(self, x: int, y: int):
+        if (x is None) or (y is None):
+            self._touched = False
+            return
+        if self._touched:
+            return
+        self._touched = True
         assert self._current_screen is not None
+        # print(f"table touch {x} {y}")
         self._current_screen.touch(x, y)
 
     def switch_to_screen_welcome(self):
@@ -121,7 +129,7 @@ class Titable:
 def main():
     if not device.is_micropython():
         M5.begin()
-    titable = Titable()
+    titable = Titable(leds_only_print=True)
     if not device.is_micropython():
         M5.TITABLE = titable
     auto_touch = False
