@@ -49,7 +49,7 @@ def create_dirs(paths: list[str]):
 
 def create_file(filename: str, content: str):
     parts = filename.split("/")
-    device.create_dirs(parts[:-1])
+    create_dirs(parts[:-1])
     open(filename, "w").write(content)
 
 
