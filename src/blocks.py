@@ -135,7 +135,7 @@ class DecorationText(Visible, Decoration):
 
     def draw(self, force_changed: bool = False):
         if not self._visible:
-            return
+            return False
         if self._changed or force_changed:
             Lcd.setFont(self._font)
             width = Lcd.textWidth(self._text)
@@ -145,6 +145,8 @@ class DecorationText(Visible, Decoration):
             Lcd.setTextColor(self._text_colour.raw_int, self._fill_colour.raw_int)
             Lcd.drawString(self._text, tx, ty)
             self._changed = False
+            return True
+        return False
 
     @property
     def text(self):
@@ -222,12 +224,14 @@ class Line(Visible):
     def force_update(self):
         self._changed = True
 
-    def draw(self):
+    def draw(self, force_changed: bool = False):
         if not self._visible:
-            return
-        if self._changed:
+            return False
+        if self._changed or force_changed:
             Lcd.drawLine(self._x1, self._y1, self._x2, self._y2, self._colour.raw_int)
             self._changed = False
+            return True
+        return False
 
 
 class Rectangle(Visible):
@@ -345,10 +349,11 @@ class Rectangle(Visible):
     def __str__(self):
         return self.__repr__()
 
-    def draw(self):
+    def draw(self, force_changed: bool = False):
         if not self._visible:
-            return
-        if self._changed:
+            return False
+        drawn = False
+        if self._changed or force_changed:
             self._changed = False
             Lcd.drawRect(self.x, self.y, self.dx, self.dy, self._border_colour.raw_int)
             Lcd.fillRect(
@@ -358,6 +363,7 @@ class Rectangle(Visible):
                 self.dy - 2,
                 self._fill_colour.raw_int,
             )
+            drawn = True
             if self.decoration_text:
                 self.decoration_text.draw(force_changed=True)
             force_children = True
@@ -367,6 +373,7 @@ class Rectangle(Visible):
             self.decoration_text.draw(force_changed=force_children)
             for deco in self._more_decoration_texts:
                 deco.draw(force_changed=force_children)
+        return drawn
 
     @property
     def cx(self):
@@ -584,12 +591,13 @@ class ButtonRectangle(Visible, Touchable):
             self._highlighted = value
             self._changed = True
 
-    def draw(self):
+    def draw(self, force_changed: bool = False):
         if not self._visible:
-            return
+            return False
         if self._debug:
             print(f"ButtonRectangle.draw {self}")
-        if self._changed:
+        drawn = False
+        if self._changed or force_changed:
             self._changed = False
             x = self.x + self._inset
             y = self.y + self._inset
@@ -614,6 +622,7 @@ class ButtonRectangle(Visible, Touchable):
                 dy - 2 * layers,
                 self._current_fill_colour.raw_int,
             )
+            drawn = True
             force_children = True
         else:
             force_children = False
@@ -621,6 +630,7 @@ class ButtonRectangle(Visible, Touchable):
             self.decoration_text.draw(force_changed=force_children)
             for deco in self._more_decoration_texts:
                 deco.draw(force_changed=force_children)
+        return drawn
 
     @property
     def cx(self):
@@ -808,10 +818,11 @@ class ButtonCircle(Visible, Touchable):
             self._highlighted = value
             self._changed = True
 
-    def draw(self):
+    def draw(self, force_changed: bool = False):
         if not self._visible:
-            return
-        if self._changed:
+            return False
+        drawn = False
+        if self._changed or force_changed:
             self._changed = False
             if self._highlighted:
                 layers = 5
@@ -830,11 +841,13 @@ class ButtonCircle(Visible, Touchable):
                 self.radius - layers,
                 self._current_fill_colour.raw_int,
             )
+            drawn = True
             force_children = True
         else:
             force_children = False
         if self.decoration_text:
             self.decoration_text.draw(force_changed=force_children)
+        return drawn
 
     def notify(self, key, value):
         if "name" == key:

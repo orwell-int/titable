@@ -264,11 +264,11 @@ class Screen:
         self.title_rectangle.draw()
         if self._title_text:
             self._title_text.draw()
-        self.left_bar.draw()
+        drawn_left_bar = self.left_bar.draw()
         self.line.draw()
         self.background.draw()
         if self._button_return:
-            self._button_return.draw()
+            self._button_return.draw(force_changed=drawn_left_bar)
         if self._text_round:
             self._text_round.draw()
         if self._text_turn:
