@@ -1,5 +1,6 @@
 import colours
 from colours import Colour
+import device
 
 
 USE_UNICODE = False
@@ -105,6 +106,22 @@ class Game:
         self._turn = turn
         self._round = round
         self._phase = phase
+        self._config_player_names = "titable/player_names"
+        loaded = False
+        self._player_names = []
+        if device.file_exists_and_not_empty(self._config_player_names):
+            try:
+                for player_name in open(self._config_player_names).readlines():
+                    player_name = player_name.rstrip("\r\n")
+                    self._player_names.append(player_name)
+                loaded = True
+            except:
+                print("Invalid player names file, ignore")
+                self._player_names = None
+        if loaded:
+            print("Available player names:", self._player_names)
+        else:
+            print("Player names not read")
         if available_strategies:
             self._available_strategies = available_strategies
         else:
@@ -146,7 +163,11 @@ class Game:
         if num > 6:
             print("Too many players")
             return None
-        player = Player(self, num, f"Player {num}", colours.PLAYER_BLANK)
+        if len(self._player_names) >= num:
+            player_name = self._player_names[num - 1]
+        else:
+            player_name = f"Player {num}"
+        player = Player(self, num, player_name, colours.PLAYER_BLANK)
         self._players.append(player)
 
     def get_player(self, num: int):
