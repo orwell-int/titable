@@ -35,4 +35,9 @@ def update():
             x, y = pygame.mouse.get_pos()
             if TITABLE is not None:
                 TITABLE.touch(x, y)
+    elif event.type == pygame.MOUSEBUTTONUP:
+        if 1 == event.button:
+            # left button
+            if TITABLE is not None:
+                TITABLE.touch(None, None)
     pygame.display.update()
