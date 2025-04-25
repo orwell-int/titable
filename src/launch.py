@@ -25,6 +25,8 @@ def loop():
     M5.update()
     if M5.Touch.getCount():
         TITABLE.touch(M5.Touch.getX(), M5.Touch.getY())
+    else:
+        TITABLE.touch(None, None)
 
 
 if __name__ == "__main__":
