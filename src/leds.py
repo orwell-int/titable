@@ -24,7 +24,7 @@ class Lights:
     KEY_OVERRIDE = "o"
     KEY_COLOUR = "c"
 
-    def __init__(self, override_url=None, only_print=False):
+    def __init__(self, override_url=None, only_print=False, reset_file=False):
         self._override_url = override_url
         self._only_print = only_print
         self._config_url = "titable/url"
@@ -40,12 +40,13 @@ class Lights:
             self._url = "http://lights"
             device.create_file(self._config_url, self._url)
         loaded = False
-        if device.file_exists_and_not_empty(self._config_lights):
-            try:
-                self._lights = json.loads(open(self._config_lights).read())
-                loaded = True
-            except:
-                print(f"Invalid lights file: {self._config_lights}")
+        if not reset_file:
+            if device.file_exists_and_not_empty(self._config_lights):
+                try:
+                    self._lights = json.loads(open(self._config_lights).read())
+                    loaded = True
+                except:
+                    print(f"Invalid lights file: {self._config_lights}")
         if not loaded:
             self._lights = {
                 Lights.KEY_GLOBAL_PERCENTAGE: 100,
@@ -76,8 +77,9 @@ class Lights:
         data = {
             "state": state,
             "rgb": f"{r},{g},{b}",
-            "brightness": str(brightness),
+            "brightness": str(int(brightness * 2.55)),
         }
+        print(f"{data}")
         self._send_command_raw(data)
 
     def _adjust_light_and_send_command(self, state: str, colour: Colour):
@@ -94,6 +96,7 @@ class Lights:
                     )
                     print(f"relative, factor = {factor}")
                 else:
+                    # MODE_ABSOLUTE
                     factor = conf[Lights.KEY_PERCENTAGE] / 100
                     print(f"absolute, factor = {factor}")
                 if Lights.KEY_OVERRIDE in conf:
@@ -125,7 +128,7 @@ class Lights:
         if colour.raw_int not in self._lights[Lights.KEY_BRIGHTNESS]:
             self._lights[Lights.KEY_BRIGHTNESS][colour.key] = {
                 Lights.KEY_MODE: Lights.MODE_ABSOLUTE,
-                Lights.KEY_PERCENTAGE: 1,
+                Lights.KEY_PERCENTAGE: 100,
             }
             self._changed = True
         else:
@@ -140,17 +143,17 @@ class Lights:
     def set_relative(self, colour: Colour):
         if colour.raw_int not in self._lights[Lights.KEY_BRIGHTNESS]:
             self._lights[Lights.KEY_BRIGHTNESS][colour.key] = {
-                Lights.KEY_MODE: Lights.MODE_ABSOLUTE,
-                Lights.KEY_PERCENTAGE: 1,
+                Lights.KEY_MODE: Lights.MODE_RELATIVE,
+                Lights.KEY_PERCENTAGE: 100,
             }
             self._changed = True
         else:
             conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
             if (
                 Lights.KEY_MODE not in conf
-                or conf[Lights.KEY_MODE] != Lights.MODE_ABSOLUTE
+                or conf[Lights.KEY_MODE] != Lights.MODE_RELATIVE
             ):
-                conf[Lights.KEY_MODE] = Lights.MODE_ABSOLUTE
+                conf[Lights.KEY_MODE] = Lights.MODE_RELATIVE
                 self._changed = True
 
     def get_mode(self, colour: Colour) -> str:
@@ -185,10 +188,10 @@ class Lights:
         else:
             conf = self._lights[Lights.KEY_BRIGHTNESS][colour.key]
             if (
-                Lights.KEY_PERCENTAGE not in conf
-                or conf[Lights.KEY_PERCENTAGE] != lightness
+                Lights.KEY_OVERRIDE not in conf
+                or conf[Lights.KEY_OVERRIDE] != lightness
             ):
-                conf[Lights.KEY_PERCENTAGE] = lightness
+                conf[Lights.KEY_OVERRIDE] = lightness
                 self._changed = True
 
     def set_percentage(self, colour: Colour, percentage: int):
@@ -248,43 +251,50 @@ class Lights:
 def main():
     import time
 
-    lights = Lights(only_print=False)
-    lights.set_override(colours.PLAYER_BLACK, 75)
-    lights.set_percentage(colours.PLAYER_BLUE, 250)
-    lights.set_percentage(colours.PLAYER_GREEN, 200)
-    lights.set_percentage(colours.PLAYER_ORANGE, 85)
-    lights.set_percentage(colours.PLAYER_YELLOW, 90)
-    lights.set_percentage(colours.PLAYER_PURPLE, 200)
-    lights.set_percentage(colours.PLAYER_PINK, 70)
-    lights.set_colour(colours.PLAYER_ORANGE, [255, 165, 0])
-    lights.set_colour(colours.PLAYER_PINK, [255, 174, 160])
-    lights.set_colour(colours.PLAYER_RED, [169, 34, 34])
-    lights.set_colour(colours.PLAYER_PURPLE, [83, 31, 185])
+    lights = Lights(only_print=False, reset_file=True)
+    #lights.set_override(colours.PLAYER_BLACK, 75)
+    lights.set_override(colours.PLAYER_BLACK, 32)
+    lights.set_override(colours.PLAYER_BLUE, 29)
+    lights.set_override(colours.PLAYER_GREEN, 24)
+    lights.set_override(colours.PLAYER_NEUTRAL, 29)
+    lights.set_override(colours.PLAYER_ORANGE, 29)
+    lights.set_override(colours.PLAYER_PINK, 22)
+    lights.set_override(colours.PLAYER_PURPLE, 29)
+    lights.set_override(colours.PLAYER_RED, 22)
+    lights.set_override(colours.PLAYER_YELLOW, 24)
+    lights.set_colour(colours.PLAYER_BLACK, [217, 255, 241])
+    lights.set_colour(colours.PLAYER_BLUE, [15, 59, 255])
+    lights.set_colour(colours.PLAYER_GREEN, [106, 255, 87])
+    lights.set_colour(colours.PLAYER_NEUTRAL, [127, 255, 219])
+    lights.set_colour(colours.PLAYER_ORANGE, [255, 162, 0])
+    lights.set_colour(colours.PLAYER_PINK, [255, 109, 184])
+    lights.set_colour(colours.PLAYER_PURPLE, [136, 50, 255])
+    lights.set_colour(colours.PLAYER_RED, [255, 80, 78])
+    lights.set_colour(colours.PLAYER_YELLOW, [223, 255, 45])
     lights.write_config()
     if False:
-        while True:
-            lights.turn_on(colours.PLAYER_YELLOW)
-            time.sleep(2)
-            lights.turn_on(colours.PLAYER_NEUTRAL)
-            time.sleep(2)
-            lights.turn_on(colours.PLAYER_BLUE)
-            time.sleep(2)
-            lights.turn_on(colours.PLAYER_NEUTRAL)
-            time.sleep(2)
+        if True:
+            # lights.turn_on(colours.PLAYER_YELLOW)
+            # time.sleep(2)
+            # lights.turn_on(colours.PLAYER_NEUTRAL)
+            # time.sleep(2)
+            # lights.turn_on(colours.PLAYER_BLUE)
+            # time.sleep(2)
+            # lights.turn_on(colours.PLAYER_NEUTRAL)
+            # time.sleep(2)
             lights.turn_on(colours.PLAYER_BLACK)
-            time.sleep(2)
-            lights.turn_on(colours.PLAYER_NEUTRAL)
-            time.sleep(2)
-            lights.turn_on(colours.PLAYER_GREEN)
-            time.sleep(2)
-            lights.turn_on(colours.PLAYER_NEUTRAL)
+            # time.sleep(2)
+            # lights.turn_on(colours.PLAYER_NEUTRAL)
+            # time.sleep(2)
+            # lights.turn_on(colours.PLAYER_GREEN)
+            # time.sleep(2)
+            # lights.turn_on(colours.PLAYER_NEUTRAL)
             time.sleep(2)
             lights.turn_on(colours.PLAYER_ORANGE)
             time.sleep(2)
-            lights.turn_on(colours.PLAYER_NEUTRAL)
-            time.sleep(2)
+            lights.turn_on(colours.PLAYER_PURPLE)
     else:
-        while True:
+        if True:
             for colour in colours.PLAYER_COLOURS:
                 print(
                     f"{colour} | {colour.raw_int} -> {colour.get_perceived_lightness()}"
