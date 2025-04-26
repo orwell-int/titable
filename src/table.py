@@ -81,7 +81,7 @@ class Titable:
         print("switch_to_screen_welcome")
         if self._current_screen:
             self._current_screen.hide()
-        self._current_screen = screens.ScreenWelcome(self._lights)
+        self._current_screen = screens.ScreenWelcome(self._lights, self._game)
         self._current_screen.draw()
 
     def switch_to_previous_screen(self, return_screen=None):

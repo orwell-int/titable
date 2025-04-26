@@ -324,10 +324,12 @@ class ScreenWelcome(Screen):
     def __init__(
         self,
         lights: leds.Lights,
+        game: logic.Game,
     ):
         super().__init__(
             lights, "welcome", "TI 4 assistant", colours.WHITE, has_return=False
         )
+        self._game = game
         button_sx = 150
         button_sy = 65
         button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
@@ -379,6 +381,10 @@ class ScreenWelcome(Screen):
         self._touchables.append(self._button_play)
         self._touchables.append(self._button_reset)
         self.update()
+
+    def update(self):
+        super().update()
+        self._button_play.enabled = self._game.players_ready_to_play
 
     def draw(self):
         super().draw()
@@ -1222,7 +1228,8 @@ def main(select=None):
     Speaker.tone(2000, 50)
     lights = leds.Lights(only_print=True)
     if 1 == select:
-        screen_welcome = ScreenWelcome(lights)
+        game = logic.Game.build_fake_game()
+        screen_welcome = ScreenWelcome(lights, game)
         screen_welcome.draw()
         screen_welcome._button_setup.force_touch()
     elif 2 == select:

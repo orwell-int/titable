@@ -175,6 +175,11 @@ class Game:
             self._available_colours.add(former_colour)
 
     @property
+    def players_ready_to_play(self):
+        ready = not any([colours.PLAYER_BLANK == p.colour for p in self._players])
+        return ready
+
+    @property
     def phase(self):
         return self._phase
 
