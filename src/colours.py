@@ -10,6 +10,7 @@ class Colour:
         self.g = g
         self.b = b
         self._pretty_name = None
+        self._id = None
 
     @staticmethod
     def from_hexa_str(hexa: str):
@@ -86,6 +87,14 @@ class Colour:
     def pretty_name(self, pretty_name):
         self._pretty_name = pretty_name
 
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, id):
+        self._id = id
+
     def __repr__(self):
         return f"Colour(r={self.r}, g={self.g}, b={self.b})"
 
@@ -127,6 +136,7 @@ PLAYER_NEUTRAL.pretty_name = "player neutral"
 # colour for a player that had not picked a colour yet
 PLAYER_BLANK = Colour(255, 255, 255)
 PLAYER_BLANK.pretty_name = "player blank"
+PLAYER_BLANK.id = -1
 
 PLAYER_BLACK = Colour(2, 2, 2)
 PLAYER_BLACK.pretty_name = "player black"
@@ -155,6 +165,9 @@ PLAYER_COLOURS = [
     PLAYER_RED,
     PLAYER_YELLOW,
 ]
+
+for id, colour in enumerate(PLAYER_COLOURS):
+    colour.id = id
 
 GRAY = Colour(255 // 2, 255 // 2, 255 // 2)
 

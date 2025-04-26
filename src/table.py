@@ -70,11 +70,11 @@ class Titable:
         if (x is None) or (y is None):
             self._touched = False
             return
+        print(f"table touch {x} {y} touched ? {self._touched}")
         if self._touched:
             return
         self._touched = True
         assert self._current_screen is not None
-        # print(f"table touch {x} {y}")
         self._current_screen.touch(x, y)
 
     def switch_to_screen_welcome(self):
@@ -126,9 +126,7 @@ class Titable:
         self._current_screen.draw()
 
 
-def main():
-    if not device.is_micropython():
-        M5.begin()
+def inner_main():
     titable = Titable(leds_only_print=True)
     if not device.is_micropython():
         M5.TITABLE = titable
@@ -146,6 +144,16 @@ def main():
         while True:
             M5.update()
 
+
+def main():
+    if not device.is_micropython():
+        M5.begin()
+        import file_mock
+        print("Mock file operations")
+        with file_mock.do():
+            inner_main()
+    else:
+        inner_main()
 
 if "__main__" == __name__:
     main()

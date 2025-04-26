@@ -106,22 +106,6 @@ class Game:
         self._turn = turn
         self._round = round
         self._phase = phase
-        self._config_player_names = "titable/player_names"
-        loaded = False
-        self._player_names = []
-        if device.file_exists_and_not_empty(self._config_player_names):
-            try:
-                for player_name in open(self._config_player_names).readlines():
-                    player_name = player_name.rstrip("\r\n")
-                    self._player_names.append(player_name)
-                loaded = True
-            except:
-                print("Invalid player names file, ignore")
-                self._player_names = None
-        if loaded:
-            print("Available player names:", self._player_names)
-        else:
-            print("Player names not read")
         if available_strategies:
             self._available_strategies = available_strategies
         else:
@@ -163,11 +147,7 @@ class Game:
         if num > 6:
             print("Too many players")
             return None
-        if len(self._player_names) >= num:
-            player_name = self._player_names[num - 1]
-        else:
-            player_name = f"Player {num}"
-        player = Player(self, num, player_name, colours.PLAYER_BLANK)
+        player = Player(self, num, colours.PLAYER_BLANK)
         self._players.append(player)
 
     def get_player(self, num: int):
@@ -352,14 +332,68 @@ class Game:
         return game
 
 
+class Property:
+    def __init__(self, filename, default, name=None):
+        self._config = "titable/" + filename
+        self._value = default
+        self._name = name if name else filename
+        self._saved_value = default
+
+        if device.file_exists_and_not_empty(self._config):
+            try:
+                value = open(self._config).read()
+                self._value = self._cast(value)
+                self._saved_value = self._value
+                #print(f"Read {name}:", value)
+            except:
+                print(f"Invalid file {self._name}, ignore")
+
+    def _cast(self, value):
+        return value
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+
+    def set(self, value):
+        if self._value != value:
+            self._value = value
+            return True
+        else:
+            return False
+
+    def write(self):
+        if self._value != self._saved_value:
+            print(f"write {self._config}: {self._value}")
+            open(self._config, "w").write(str(self._value))
+            self._saved_value = self._value
+        else:
+            print(f"write {self._config} SKIPPED")
+
+    def notify(self, key, value):
+        # it is not very nice to have a specific case...
+        if key == "colour":
+            colour = value
+            self._value = colour.id
+        else:
+            self._value = value
+
+
+class PropertyInt(Property):
+    def _cast(self, value):
+        return int(value)
+
+
 class Player:
     # FACTION_NOT_IMPLEMENTED = 0
     def __init__(
         self,
         game: Game,
         num: int,
-        name: str,
-        colour: Colour,
         # faction:int = FACTION_NOT_IMPLEMENTED,
         score: int = 0,
         has_passed: bool = False,
@@ -368,14 +402,24 @@ class Player:
     ):
         self._game = game
         self._num = num
-        self._name = name
-        self._colour = colour
+        self._saved_name = Property(
+            f"player_{num}_name",
+            f"Player {num}",
+            f"player ({num})")
+        self._saved_colour = PropertyInt(
+            f"player_{num}_colour",
+            colours.PLAYER_BLANK.id,
+            f"colour ({num})")
+        if colours.PLAYER_BLANK.id == self._saved_colour.value:
+            self._colour = colours.PLAYER_BLANK
+        else:
+            self._colour = colours.PLAYER_COLOURS[self._saved_colour.value]
         self._score = score
         self._has_passed = has_passed
         self._has_played_strategy = has_played_strategy
         self._strategy = strategy
         self._observers_name = []
-        self._observers_colour = []
+        self._observers_colour = [self._saved_colour]
 
     def add_observer_name(self, observer):
         if observer not in self._observers_name:
@@ -400,14 +444,14 @@ class Player:
 
     @property
     def name(self):
-        return self._name
+        return self._saved_name.value
 
     @name.setter
     def name(self, name):
-        self._name = name
-        if self._observers_name:
-            for observer in self._observers_name:
-                observer.notify("name", name)
+        if self._saved_name.set(name):
+            if self._observers_name:
+                for observer in self._observers_name:
+                    observer.notify("name", name)
 
     @property
     def colour(self):
@@ -472,7 +516,7 @@ class Player:
         return self._game.get_player(self.num + 1)
 
     def __repr__(self):
-        string = f"Player(num={self._num}, name={self._name}, "
+        string = f"Player(num={self._num}, name={self._saved_name.value}, "
         string += f"colour={self._colour}, has_passed={self._has_passed}, "
         string += f"has_played_strategy={self._has_played_strategy}, "
         string += f"strategy={self._strategy})"
@@ -480,6 +524,12 @@ class Player:
 
     def __str__(self):
         return self.__repr__()
+
+    def write_name(self):
+        self._saved_name.write()
+
+    def write_colour(self):
+        self._saved_colour.write()
 
 
 def main():

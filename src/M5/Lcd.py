@@ -11,7 +11,11 @@ TEXT_COLOUR = None
 TEXT_BACKGROUND_COLOUR = None
 
 PYGAME_FONT = None
-
+PYGAME_FONT_9 = None
+PYGAME_FONT_12 = None
+PYGAME_FONT_18 = None
+PYGAME_FONT_24 = None
+PYGAME_FONT_40 = None
 
 # the text is not long enough
 # FONT_STRING = "DejaVuSans-ExtraLight.ttf"
@@ -19,20 +23,47 @@ PYGAME_FONT = None
 FONT_STRING = "DejaVuSans-Bold.ttf"
 
 
+def initFonts():
+    for font in (
+        Widgets.FONTS.DejaVu9,
+        Widgets.FONTS.DejaVu12,
+        Widgets.FONTS.DejaVu18,
+        Widgets.FONTS.DejaVu24,
+        Widgets.FONTS.DejaVu40,
+    ):
+        setFont(font)
+
+
 def setFont(index: int):
     global FONT
     global PYGAME_FONT
+    global PYGAME_FONT_9
+    global PYGAME_FONT_12
+    global PYGAME_FONT_18
+    global PYGAME_FONT_24
+    global PYGAME_FONT_40
+
     FONT = index
     if Widgets.FONTS.DejaVu9 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 9)
+        if PYGAME_FONT_9 is None:
+            PYGAME_FONT_9 = pygame.freetype.SysFont(FONT_STRING, 9)
+        PYGAME_FONT = PYGAME_FONT_9
     elif Widgets.FONTS.DejaVu12 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 12)
+        if PYGAME_FONT_12 is None:
+            PYGAME_FONT_12 = pygame.freetype.SysFont(FONT_STRING, 12)
+        PYGAME_FONT = PYGAME_FONT_12
     elif Widgets.FONTS.DejaVu18 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 18)
+        if PYGAME_FONT_18 is None:
+            PYGAME_FONT_18 = pygame.freetype.SysFont(FONT_STRING, 18)
+        PYGAME_FONT = PYGAME_FONT_18
     elif Widgets.FONTS.DejaVu24 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 24)
+        if PYGAME_FONT_24 is None:
+            PYGAME_FONT_24 = pygame.freetype.SysFont(FONT_STRING, 24)
+        PYGAME_FONT = PYGAME_FONT_24
     elif Widgets.FONTS.DejaVu40 == FONT:
-        PYGAME_FONT = pygame.freetype.SysFont(FONT_STRING, 40)
+        if PYGAME_FONT_40 is None:
+            PYGAME_FONT_40 = pygame.freetype.SysFont(FONT_STRING, 40)
+        PYGAME_FONT = PYGAME_FONT_40
 
 
 def _setDefaultFont():

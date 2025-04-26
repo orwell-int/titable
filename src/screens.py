@@ -588,6 +588,7 @@ class ScreenSetupColour(Screen):
         )
         self._on_return = ScreenTypes.SETUP_PLAYERS
         self._previous_colour = player.colour
+        self._player = player
         events.HANDLER.register(events.PICK_COLOUR, self)
         events.HANDLER.register_once(events.RETURN, self)
         button_font = Widgets.FONTS.DejaVu18
@@ -681,6 +682,10 @@ class ScreenSetupColour(Screen):
             self.draw()
         elif events.RETURN == event:
             events.HANDLER.unregister(events.PICK_COLOUR, self)
+
+    def hide(self):
+        super().hide()
+        self._player.write_colour()
 
     def draw(self):
         super().draw()

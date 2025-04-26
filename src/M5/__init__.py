@@ -2,6 +2,7 @@ import sys
 
 
 from . import Speaker
+from . import Lcd
 
 import pygame
 
@@ -18,6 +19,7 @@ def begin():
     pygame.init()
     DISPLAY = pygame.display.set_mode((320, 240), 0, 32)
     CLOCK = pygame.time.Clock()
+    Lcd.initFonts()
     pass
 
 
