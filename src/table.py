@@ -42,7 +42,8 @@ class Titable:
         elif events.SWAP == event:
             pass
         elif events.STRATEGY_PLAYER == event:
-            pass
+            player = args["player"]
+            self.switch_to_screen_startegy_player(player)
         elif events.PICK_STRATEGY == event:
             pass
         elif events.SETUP_NAME == event:
@@ -70,7 +71,7 @@ class Titable:
         if (x is None) or (y is None):
             self._touched = False
             return
-        print(f"table touch {x} {y} touched ? {self._touched}")
+        #print(f"table touch {x} {y} touched ? {self._touched}")
         if self._touched:
             return
         self._touched = True
@@ -100,6 +101,13 @@ class Titable:
         self._current_screen = screens.ScreenStrategy(self._lights, self._game)
         self._current_screen.draw()
 
+    def switch_to_screen_startegy_player(self, player):
+        print("switch_to_screen_strategy_player")
+        if self._current_screen:
+            self._current_screen.hide()
+        self._current_screen = screens.ScreenStrategyPlayer(self._lights, self._game, player.num)
+        self._current_screen.draw()
+
     def switch_to_previous_screen(self, return_screen=None):
         assert self._current_screen is not None
         if return_screen is None:
@@ -113,9 +121,9 @@ class Titable:
         elif ScreenTypes.SETUP_PLAYER_COLOUR == return_screen:
             raise Exception("It is not possible to switch back to SETUP_PLAYER_COLOUR")
         elif ScreenTypes.STRATEGY_MAIN == return_screen:
-            pass
+            self.switch_to_screen_startegy()
         elif ScreenTypes.STRATEGY_PLAYER == return_screen:
-            pass
+            raise Exception("It is not possible to switch back to STRATEGY_PLAYER")
         elif ScreenTypes.ACTION_PLAYER == return_screen:
             pass
         elif ScreenTypes.STATUS_PLAYER == return_screen:

@@ -301,9 +301,13 @@ class Rectangle(Visible):
         self._changed = True
 
     def set_more_text(self, index, text):
-        if self._more_decoration_texts[index].text != text:
-            self._more_decoration_texts[index].text = text
-            self._changed = True
+        if len(self._more_decoration_texts) < index + 1:
+            while len(self._more_decoration_texts) < index + 1:
+                self.add_more_text(text)
+        else:
+            if self._more_decoration_texts[index].text != text:
+                self._more_decoration_texts[index].text = text
+                self._changed = True
 
     @property
     def text_colour(self):
@@ -488,9 +492,14 @@ class ButtonRectangle(Visible, Touchable):
         self._changed = True
 
     def set_more_text(self, index, text):
-        if self._more_decoration_texts[index].text != text:
-            self._more_decoration_texts[index].text = text
-            self._changed = True
+        print(f"set_more_text {len(self._more_decoration_texts)} < {index + 1} ; {text}")
+        if len(self._more_decoration_texts) < index + 1:
+            while len(self._more_decoration_texts) < index + 1:
+                self.add_more_text(text)
+        else:
+            if self._more_decoration_texts[index].text != text:
+                self._more_decoration_texts[index].text = text
+                self._changed = True
 
     @property
     def text_colour(self):

@@ -775,26 +775,30 @@ class ScreenStrategy(Screen):
 
 class ScreenStrategyPlayer(Screen):
     def __init__(self, lights: leds.Lights, game: logic.Game, player_num: int):
-        strategies_to_players = {}
+        self._strategies_to_players = {}
         can_swap = True
         for player in game.players:
             if player.strategy != Strategies.NONE:
-                strategies_to_players[player.strategy] = player
+                self._strategies_to_players[player.strategy] = player
             else:
                 can_swap = False
-        player = game.get_player(player_num)
+        self._other_player = None
+        self._player = game.get_player(player_num)
+        self._previous_strategy = self._player.strategy
         super().__init__(
             lights,
             "strategy player",
-            player.name,
+            self._player.name,
             title_colour=None,
-            side_colour=player.colour,
+            side_colour=self._player.colour,
             game=game,
             has_round=True,
             has_turn=True,
         )
         self._game = game
         self._on_return = ScreenTypes.STRATEGY_MAIN
+        events.HANDLER.register(events.PICK_STRATEGY, self)
+        events.HANDLER.register_once(events.RETURN, self)
         button_font = Widgets.FONTS.DejaVu18
         num_columns = 3
         num_lines = 3
@@ -812,33 +816,26 @@ class ScreenStrategyPlayer(Screen):
                 args = None
                 if is_colour:
                     colour = Strategies.to_colour(strategy_index)
-                    is_button = True
-                    if strategy_index in strategies_to_players:
-                        other_player = strategies_to_players[strategy_index]
-                        text = other_player.name
-                        if other_player == player:
+                    text = f"{strategy_index} [{game.available_strategies[strategy_index]}]"
+                    if strategy_index in self._strategies_to_players:
+                        other_player = self._strategies_to_players[strategy_index]
+                        if other_player == self._player:
+                            other_player = None
                             disable = True
-                        else:
-                            disable = not can_swap
-                        args = {
-                            "player": other_player,
-                            "strategy": strategy_index,
-                        }
                     else:
-                        text = f"{strategy_index} [{game.available_strategies[strategy_index]}]"
-                        disable = can_swap
+                        other_player = None
+                    if other_player is not None:
+                        args = {
+                            "other_strategy": strategy_index,
+                            "other_player": other_player,
+                        }
+                        event = events.PICK_STRATEGY_SWAP
+                    else:
+                        event = events.PICK_STRATEGY
                         args = {
                             "strategy": strategy_index,
                         }
                     strategy_index += 1
-                else:
-                    colour = colours.PLAYER_BLANK
-                    if can_swap:
-                        text = "swap"
-                    else:
-                        text = "back"
-                    is_button = can_swap
-                if is_button:
                     control = blocks.ButtonRectangle(
                         LEFT_BAR_WIDTH + dx + (dx + sx) * column,
                         TITLE_HEIGHT + dy + (dy + sy) * line,
@@ -850,12 +847,15 @@ class ScreenStrategyPlayer(Screen):
                     )
                     control.args = args
                     control.action = lambda args: events.HANDLER.send_event(
-                        events.PICK_STRATEGY, args
+                        event, args
                     )
                     if disable:
                         control.enabled = False
+                    self._buttons.append(control)
                 else:
-                    control = blocks.Rectangle(
+                    colour = colours.PLAYER_BLANK
+                    text = "back"
+                    control = blocks.ButtonRectangle(
                         LEFT_BAR_WIDTH + dx + (dx + sx) * column,
                         TITLE_HEIGHT + dy + (dy + sy) * line,
                         sx,
@@ -864,14 +864,54 @@ class ScreenStrategyPlayer(Screen):
                         colour,
                         Screen.COLOUR_BORDER,
                     )
-                if is_colour:
-                    self._buttons.append(control)
-                else:
+                    control.action = lambda args: events.HANDLER.send_event(
+                        events.RETURN, args
+                    )
                     self._center_control = control
         for button, strategy in zip(self._buttons, logic.Strategies.ALL):
             button.add_more_text(Strategies.to_string(strategy))
+            if strategy in self._strategies_to_players:
+                player = self._strategies_to_players[strategy]
+                button.add_more_text(player.name)
+            else:
+                button.add_more_text("")
         self._touchables.extend(self._buttons)
+        self._touchables.append(self._center_control)
         self.update()
+
+    def do_event(self, event, args):
+        if events.PICK_STRATEGY == event:
+            strategy = args["strategy"]
+            print(f"pick strategy {strategy} for player {self._player}")
+            if self._previous_strategy != logic.Strategies.NONE:
+                if self._previous_strategy in self._strategies_to_players:
+                    del self._strategies_to_players[self._previous_strategy]
+                else:
+                    print(
+                        f"bug while restoring previous strategy {self._previous_strategy}"
+                    )
+            self._strategies_to_players[strategy] = self._player
+            previous_colour = logic.Strategies.to_colour(self._previous_strategy)
+            colour = logic.Strategies.to_colour(strategy)
+            print(f"preivous_colour = {previous_colour} ; colour = {colour}")
+            for button in self._buttons:
+                if button.fill_colour == colour:
+                    button.set_more_text(1, self._player.name)
+                    button.highlighted = True
+                elif button.fill_colour == previous_colour:
+                    button.set_more_text(1, "")
+                    button.highlighted = False
+            self._previous_strategy = strategy
+            self.side_strategy = strategy
+            self._player.strategy = strategy
+            self.draw()
+        elif events.PICK_STRATEGY_SWAP == event:
+            self._other_player = args["other_player"]
+            self._other_strategy = args["other_strategy"]
+        elif events.SWAP_STRATEGY == event:
+            pass
+        elif events.RETURN == event:
+            events.HANDLER.unregister(events.PICK_STRATEGY, self)
 
     def draw(self):
         super().draw()

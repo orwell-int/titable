@@ -74,6 +74,8 @@ class Strategies:
 
     @staticmethod
     def to_colour(strategy: int):
+        if Strategies.NONE == strategy:
+            return None
         return colours.STRATEGY_COLOURS[strategy - 1]
 
 
