@@ -28,7 +28,7 @@ class Titable:
         elif events.SETUP == event:
             self.switch_to_screen_setup()
         elif events.PLAY == event:
-            pass
+            self.resume_play()
         elif events.RESET == event:
             pass
         elif events.SETUP_COLOUR == event:
@@ -81,7 +81,23 @@ class Titable:
         print("switch_to_screen_welcome")
         if self._current_screen:
             self._current_screen.hide()
+            self._game.stop_playing()
         self._current_screen = screens.ScreenWelcome(self._lights, self._game)
+        self._current_screen.draw()
+
+    def resume_play(self):
+        self._game.start_playing()
+        phase = self._game.phase
+        if logic.Game.PHASE_STRATEGY == phase:
+            self.switch_to_screen_startegy()
+        else:
+            raise Exception(f"Not implemented yet (resume_play from phase {phase} )")
+
+    def switch_to_screen_startegy(self):
+        print("switch_to_screen_strategy")
+        if self._current_screen:
+            self._current_screen.hide()
+        self._current_screen = screens.ScreenStrategy(self._lights, self._game)
         self._current_screen.draw()
 
     def switch_to_previous_screen(self, return_screen=None):
@@ -151,6 +167,8 @@ def main():
         import file_mock
         print("Mock file operations")
         with file_mock.do():
+            for num in range(6):
+                open(f"titable/player_{num + 1}_colour", "w").write(str(num))
             inner_main()
     else:
         inner_main()

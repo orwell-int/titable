@@ -725,7 +725,8 @@ class ScreenStrategy(Screen):
             game=game,
             has_round=True,
         )
-        self._on_return = ScreenTypes.NAALU_ABILITY
+        #self._on_return = ScreenTypes.NAALU_ABILITY
+        self._on_return = ScreenTypes.WELCOME
         self._game = game
         self._players = game.players
         button_font = Widgets.FONTS.DejaVu18

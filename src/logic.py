@@ -201,10 +201,21 @@ class Game:
         self._state = new_state
 
     def start_playing(self):
-        self.switch_state(Game.STATE_PLAY)
-        self._turn = 0
-        self._round = 1
-        self._start_phase_strategy()
+        assert self.players_ready_to_play
+        if Game.STATE_INIT == self._state:
+            self.switch_state(Game.STATE_PLAY)
+            self._turn = 0
+            self._round = 1
+            self._start_phase_strategy()
+        else:
+            raise Exception("It is not possible to start playing while already playing")
+
+    def stop_playing(self):
+        self.switch_state(Game.STATE_INIT)
+
+    @property
+    def state(self):
+        return self._state
 
     @property
     def available_strategies(self):
@@ -346,11 +357,12 @@ class Property:
 
         if device.file_exists_and_not_empty(self._config):
             try:
-                value = open(self._config).read()
+                value = open(self._config, "r").read()
                 self._value = self._cast(value)
                 self._saved_value = self._value
                 #print(f"Read {name}:", value)
-            except:
+            except Exception as ex:
+                print(ex)
                 print(f"Invalid file {self._name}, ignore")
 
     def _cast(self, value):
