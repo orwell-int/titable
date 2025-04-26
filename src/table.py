@@ -22,7 +22,7 @@ class Titable:
         events.HANDLER.register(events.ALL, self)
         self._touched = False
 
-    def do_event(self, event: int, args):
+    def do_event(self, sender, event: int, args):
         if events.RETURN == event:
             self.switch_to_previous_screen()
         elif events.SETUP == event:

@@ -45,16 +45,17 @@ class Touchable:
 
     def touch(self, x: int, y: int):
         if self._debug:
-            print(f"touch({x}, {y} ~ {self.contains(x, y)}")
+            print(f"touch({x}, {y}) ~ {self.contains(x, y)}")
         if self.contains(x, y):
-            # print(f"touch self._action = {self._action}")
+            #print(f"touch self._action = {self._action}")
+            #print(f"touch args {self._args}")
             if self._action is not None:
                 ref_ms = device.get_timeref_ms()
                 if ref_ms >= self._next_ms:
                     self._beep()
                     # forward the args this way instead of through lambda
                     # because it is easier to debug
-                    self._action(self._args)
+                    self._action(self, self._args)
                     self._next_ms = self._min_delta_ms + ref_ms
 
     def force_touch(self):
@@ -466,6 +467,7 @@ class ButtonRectangle(Visible, Touchable):
     def text(self, text):
         if self._text != text:
             self._text = text
+            self._changed = True
             if self.decoration_text:
                 self.decoration_text.text = text
 
@@ -730,6 +732,7 @@ class ButtonCircle(Visible, Touchable):
     def text(self, text):
         if self._text != text:
             self._text = text
+            self._changed = True
             if self.decoration_text:
                 self.decoration_text.text = text
 

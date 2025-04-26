@@ -100,6 +100,17 @@ class TextTurn(SillyText):
         )
 
 
+class DelaySendEvent:
+    def __init__(self, event):
+        self._event = event
+
+    def __call__(self, sender, args):
+        events.HANDLER.send_event(sender, self._event, args)
+
+    def __str__(self):
+        return f"<{events.to_string(self._event)}>"
+
+
 class Screen:
     COLOUR_BORDER = colours.PALETTE_GOLD
 
@@ -187,9 +198,7 @@ class Screen:
                 colours.PALETTE_LIGHT_GREEN,
                 # Screen.COLOUR_BORDER,
             )
-            self._button_return.action = lambda args: events.HANDLER.send_event(
-                events.RETURN, args
-            )
+            self._button_return.action = DelaySendEvent(events.RETURN)
             self._touchables.append(self._button_return)
         else:
             self._button_return = None
@@ -304,7 +313,7 @@ class Screen:
                         button_font,
                     )
                     button.args = {"player": player}
-                    button.action = lambda args: events.HANDLER.send_event(event, args)
+                    button.action = DelaySendEvent(event)
                     buttons.append(button)
                 else:
                     rectangle = blocks.Rectangle(
@@ -347,9 +356,7 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
-        self._button_setup.action = lambda args: events.HANDLER.send_event(
-            events.SETUP, args
-        )
+        self._button_setup.action = DelaySendEvent(events.SETUP)
         play_or_resume = "Play"
         self._button_play = blocks.ButtonRectangle(
             button_x_offset,
@@ -361,9 +368,7 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
-        self._button_play.action = lambda args: events.HANDLER.send_event(
-            events.PLAY, args
-        )
+        self._button_play.action = DelaySendEvent(events.PLAY)
         self._button_reset = blocks.ButtonRectangle(
             button_x_offset,
             TITLE_HEIGHT + dy + (button_sy + dy) * 2,
@@ -374,9 +379,7 @@ class ScreenWelcome(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
-        self._button_reset.action = lambda args: events.HANDLER.send_event(
-            events.RESET, args
-        )
+        self._button_reset.action = DelaySendEvent(events.RESET)
         self._touchables.append(self._button_setup)
         self._touchables.append(self._button_play)
         self._touchables.append(self._button_reset)
@@ -643,13 +646,9 @@ class ScreenSetupColour(Screen):
                         "player": player,
                     }
                     control.args = args
-                    control.action = lambda args: events.HANDLER.send_event(
-                        events.PICK_COLOUR, args
-                    )
+                    control.action = DelaySendEvent(events.PICK_COLOUR)
                 else:
-                    control.action = lambda args: events.HANDLER.send_event(
-                        events.RETURN, args
-                    )
+                    control.action = DelaySendEvent(events.RETURN)
                 if disable:
                     control.enabled = False
                 if highlight:
@@ -663,7 +662,7 @@ class ScreenSetupColour(Screen):
         self._switch_lights = True
         self.update()
 
-    def do_event(self, event, args):
+    def do_event(self, sender, event, args):
         if events.PICK_COLOUR == event:
             player = args["player"]
             colour = args["colour"]
@@ -745,9 +744,7 @@ class ScreenStrategy(Screen):
             # Screen.COLOUR_BORDER,
             button_font,
         )
-        self._button_end_phase.action = lambda args: events.HANDLER.send_event(
-            events.NEXT, args
-        )
+        self._button_end_phase.action = DelaySendEvent(events.NEXT)
         self._buttons, self._rectangles = self._create_grid_players(
             button_font, self._players, events.STRATEGY_PLAYER
         )
@@ -783,6 +780,9 @@ class ScreenStrategyPlayer(Screen):
             else:
                 can_swap = False
         self._other_player = None
+        self._other_strategy = None
+        self._other_button = None
+        self._player_button = None
         self._player = game.get_player(player_num)
         self._previous_strategy = self._player.strategy
         super().__init__(
@@ -798,6 +798,9 @@ class ScreenStrategyPlayer(Screen):
         self._game = game
         self._on_return = ScreenTypes.STRATEGY_MAIN
         events.HANDLER.register(events.PICK_STRATEGY, self)
+        events.HANDLER.register(events.PICK_STRATEGY_SWAP, self)
+        events.HANDLER.register(events.UNPICK_STRATEGY_SWAP, self)
+        events.HANDLER.register(events.SWAP_STRATEGY, self)
         events.HANDLER.register_once(events.RETURN, self)
         button_font = Widgets.FONTS.DejaVu18
         num_columns = 3
@@ -814,6 +817,8 @@ class ScreenStrategyPlayer(Screen):
                 disable = False
                 is_colour = not ((line == 1) and (column == 1))
                 args = None
+                event = None
+                is_for_current_player = False
                 if is_colour:
                     colour = Strategies.to_colour(strategy_index)
                     text = f"{strategy_index} [{game.available_strategies[strategy_index]}]"
@@ -821,21 +826,12 @@ class ScreenStrategyPlayer(Screen):
                         other_player = self._strategies_to_players[strategy_index]
                         if other_player == self._player:
                             other_player = None
+                            is_for_current_player = True
                             disable = True
+                        else:
+                            disable = not can_swap
                     else:
                         other_player = None
-                    if other_player is not None:
-                        args = {
-                            "other_strategy": strategy_index,
-                            "other_player": other_player,
-                        }
-                        event = events.PICK_STRATEGY_SWAP
-                    else:
-                        event = events.PICK_STRATEGY
-                        args = {
-                            "strategy": strategy_index,
-                        }
-                    strategy_index += 1
                     control = blocks.ButtonRectangle(
                         LEFT_BAR_WIDTH + dx + (dx + sx) * column,
                         TITLE_HEIGHT + dy + (dy + sy) * line,
@@ -845,13 +841,33 @@ class ScreenStrategyPlayer(Screen):
                         colour,
                         Screen.COLOUR_BORDER,
                     )
-                    control.args = args
-                    control.action = lambda args: events.HANDLER.send_event(
-                        event, args
-                    )
+                    if is_for_current_player:
+                        self._player_button = control
+                    #print(f"Disable at column {column}, line {line} ?", disable)
                     if disable:
                         control.enabled = False
+                    if other_player is not None:
+                        event = events.PICK_STRATEGY_SWAP
+                        args = {
+                            "other_strategy": strategy_index,
+                            "other_player": other_player,
+                            "line": line,
+                            "column": column,
+                            "event": events.to_string(event),
+                        }
+                    else:
+                        event = events.PICK_STRATEGY
+                        args = {
+                            "strategy": strategy_index,
+                            "line": line,
+                            "column": column,
+                            "event": events.to_string(event),
+                        }
+                    control.args = args
+                    control.action = DelaySendEvent(event)
+                    #print(f"At column {column}, line {line} event {events.to_string(event)} args {args}")
                     self._buttons.append(control)
+                    strategy_index += 1
                 else:
                     colour = colours.PLAYER_BLANK
                     text = "back"
@@ -864,9 +880,7 @@ class ScreenStrategyPlayer(Screen):
                         colour,
                         Screen.COLOUR_BORDER,
                     )
-                    control.action = lambda args: events.HANDLER.send_event(
-                        events.RETURN, args
-                    )
+                    control.action = DelaySendEvent(events.RETURN)
                     self._center_control = control
         for button, strategy in zip(self._buttons, logic.Strategies.ALL):
             button.add_more_text(Strategies.to_string(strategy))
@@ -875,11 +889,14 @@ class ScreenStrategyPlayer(Screen):
                 button.add_more_text(player.name)
             else:
                 button.add_more_text("")
+            #print("button.action:", button.action)
+            #print("button.args:", button.args)
         self._touchables.extend(self._buttons)
         self._touchables.append(self._center_control)
         self.update()
 
-    def do_event(self, event, args):
+    def do_event(self, sender, event, args):
+        #print(f"do_event {events.to_string(event)} {args}")
         if events.PICK_STRATEGY == event:
             strategy = args["strategy"]
             print(f"pick strategy {strategy} for player {self._player}")
@@ -893,14 +910,17 @@ class ScreenStrategyPlayer(Screen):
             self._strategies_to_players[strategy] = self._player
             previous_colour = logic.Strategies.to_colour(self._previous_strategy)
             colour = logic.Strategies.to_colour(strategy)
-            print(f"preivous_colour = {previous_colour} ; colour = {colour}")
+            #print(f"previous_colour = {previous_colour} ; colour = {colour}")
             for button in self._buttons:
                 if button.fill_colour == colour:
                     button.set_more_text(1, self._player.name)
                     button.highlighted = True
+                    button.enabled = False
+                    self._player_button = button
                 elif button.fill_colour == previous_colour:
                     button.set_more_text(1, "")
                     button.highlighted = False
+                    button.enabled = True
             self._previous_strategy = strategy
             self.side_strategy = strategy
             self._player.strategy = strategy
@@ -908,10 +928,67 @@ class ScreenStrategyPlayer(Screen):
         elif events.PICK_STRATEGY_SWAP == event:
             self._other_player = args["other_player"]
             self._other_strategy = args["other_strategy"]
+            self._other_button = sender
+            self._player_button.highlighted = False
+            button = sender
+            button.enabled = True
+            button.highlighted = True
+            button.action = DelaySendEvent(events.UNPICK_STRATEGY_SWAP)
+            for other_button in self._buttons:
+                if button != other_button:
+                    other_button.enabled = False
+            self._center_control.text = "swap"
+            self._center_control.action = DelaySendEvent(events.SWAP_STRATEGY)
+            self.draw()
+        elif events.UNPICK_STRATEGY_SWAP == event:
+            button = sender
+            button.highlighted = False
+            button.action = DelaySendEvent(events.PICK_STRATEGY_SWAP)
+            self._center_control.text = "back"
+            self._center_control.action = DelaySendEvent(events.RETURN)
+            for other_button in self._buttons:
+                if self._player_button != other_button:
+                    other_button.enabled = True
+            self._other_player = None
+            self._other_strategy = None
+            self._other_button = None
+            self.draw()
         elif events.SWAP_STRATEGY == event:
-            pass
+            # swap strategies in mapping
+            self._strategies_to_players[self._other_player.strategy] = self._player
+            self._strategies_to_players[self._player.strategy] = self._other_player
+            # swap stratgies in players
+            self._other_player.strategy = self._player.strategy
+            self._player.strategy = self._other_strategy
+            # swap players in buttons
+            self._other_button.set_more_text(1, self._player.name)
+            self._player_button.set_more_text(1, self._other_player.name)
+            # fix various states
+            self._player_button.args = {
+                "other_strategy": self._other_player.strategy,
+                "other_player": self._other_player,
+            }
+            self._player_button.action = DelaySendEvent(events.PICK_STRATEGY_SWAP)
+            # Make the player button the one that was picked for swapping
+            self._player_button = self._other_button
+            self._player_button.args = {
+                "strategy": self._player.strategy,
+            }
+            self._player_button.action = DelaySendEvent(events.PICK_STRATEGY)
+            self._player_button.enabled = False
+            self._player_button.highlighted = True
+            self._center_control.text = "back"
+            self._center_control.action = DelaySendEvent(events.RETURN)
+            self._other_player = None
+            self._other_strategy = None
+            self._other_button = None
+            for other_button in self._buttons:
+                if self._player_button != other_button:
+                    other_button.enabled = True
+            self._previous_strategy = self._player.strategy
+            self.draw()
         elif events.RETURN == event:
-            events.HANDLER.unregister(events.PICK_STRATEGY, self)
+            events.HANDLER.unregister(events.ALL, self)
 
     def draw(self):
         super().draw()
@@ -978,9 +1055,7 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
-        self._button_previous.action = lambda args: events.HANDLER.send_event(
-            events.PREVIOUS, args
-        )
+        self._button_previous.action = DelaySendEvent(events.PREVIOUS)
         self._button_previous.add_more_text(player.previous.name)
 
         text_next = "next"
@@ -995,9 +1070,7 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
-        self._button_next.action = lambda args: events.HANDLER.send_event(
-            events.NEXT, args
-        )
+        self._button_next.action = DelaySendEvent(events.NEXT)
         self._button_next.add_more_text(player.next.name)
 
         self._button_strategy = blocks.ButtonRectangle(
@@ -1011,9 +1084,7 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
-        self._button_strategy.action = lambda args: events.HANDLER.send_event(
-            events.PLAY_STRATEGY, args
-        )
+        self._button_strategy.action = DelaySendEvent(events.PLAY_STRATEGY)
 
         self._button_tactical_and_component = blocks.ButtonRectangle(
             self._button_previous.right - 1,
@@ -1027,9 +1098,7 @@ class ScreenAction(Screen):
             inset=2,
         )
         self._button_tactical_and_component.action = (
-            lambda args: events.HANDLER.send_event(
-                events.PLAY_TACTICAL_ORCOMPONENT, args
-            )
+            DelaySendEvent(events.PLAY_TACTICAL_OR_COMPONENT)
         )
         self._button_tactical_and_component.add_more_text("/")
         self._button_tactical_and_component.add_more_text("Component")
@@ -1051,9 +1120,7 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
-        self._button_tactical_and_component.action = (
-            lambda args: events.HANDLER.send_event(event, args)
-        )
+        self._button_tactical_and_component.action = DelaySendEvent(event)
         self._touchables.append(self._button_previous)
         self._touchables.append(self._button_next)
         self._touchables.append(self._button_strategy)
@@ -1128,9 +1195,7 @@ class ScreenStatus(Screen):
             button_font,
             inset=2,
         )
-        self._button_previous.action = lambda args: events.HANDLER.send_event(
-            events.PREVIOUS, args
-        )
+        self._button_previous.action = DelaySendEvent(events.PREVIOUS)
         self._button_previous.add_more_text(player.previous.name)
 
         text_next = "next"
@@ -1145,9 +1210,7 @@ class ScreenStatus(Screen):
             button_font,
             inset=2,
         )
-        self._button_next.action = lambda args: events.HANDLER.send_event(
-            events.NEXT, args
-        )
+        self._button_next.action = DelaySendEvent(events.NEXT)
         self._button_next.add_more_text(player.next.name)
 
         y_offset = 30
@@ -1205,9 +1268,7 @@ class ScreenMenu(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
-        self._button_welcome.action = lambda args: events.HANDLER.send_event(
-            events.WELCOME, args
-        )
+        self._button_welcome.action = DelaySendEvent(events.WELCOME)
         self._button_reset_phase = blocks.ButtonRectangle(
             button_x_offset,
             TITLE_HEIGHT + dy + button_sy + dy,
@@ -1218,9 +1279,7 @@ class ScreenMenu(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
-        self._button_reset_phase.action = lambda args: events.HANDLER.send_event(
-            events.RESET_PHASE, args
-        )
+        self._button_reset_phase.action = DelaySendEvent(events.RESET_PHASE)
         self._button_reset_round = blocks.ButtonRectangle(
             button_x_offset,
             TITLE_HEIGHT + dy + (button_sy + dy) * 2,
@@ -1231,9 +1290,7 @@ class ScreenMenu(Screen):
             Screen.COLOUR_BORDER,
             button_font,
         )
-        self._button_reset_round.action = lambda args: events.HANDLER.send_event(
-            events.RESET_ROUND, args
-        )
+        self._button_reset_round.action = DelaySendEvent(events.RESET_ROUND)
         self._switch_lights = False
         self._touchables.append(self._button_welcome)
         self._touchables.append(self._button_reset_phase)
