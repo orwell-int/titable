@@ -129,7 +129,7 @@ WHITE.pretty_name = "white"
 BLACK = Colour(0, 0, 0)
 BLACK.pretty_name = "black"
 
-# colour when no player is playing 
+# colour when no player is playing
 PLAYER_NEUTRAL = Colour(103, 205, 210)
 PLAYER_NEUTRAL.pretty_name = "player neutral"
 

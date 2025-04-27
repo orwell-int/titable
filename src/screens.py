@@ -245,7 +245,7 @@ class Screen:
         if self._title_text:
             self._title_text.fill_colour = side_colour
             self._title_text.text_colour = side_colour.get_contrasting_text()
-            #print(self._title_text)
+            # print(self._title_text)
         self.left_bar.fill_colour = side_colour
         self.line.colour = side_colour
         if self._switch_lights:
@@ -724,7 +724,7 @@ class ScreenStrategy(Screen):
             game=game,
             has_round=True,
         )
-        #self._on_return = ScreenTypes.NAALU_ABILITY
+        # self._on_return = ScreenTypes.NAALU_ABILITY
         self._on_return = ScreenTypes.WELCOME
         self._game = game
         self._players = game.players
@@ -843,7 +843,7 @@ class ScreenStrategyPlayer(Screen):
                     )
                     if is_for_current_player:
                         self._player_button = control
-                    #print(f"Disable at column {column}, line {line} ?", disable)
+                    # print(f"Disable at column {column}, line {line} ?", disable)
                     if disable:
                         control.enabled = False
                     if other_player is not None:
@@ -865,7 +865,7 @@ class ScreenStrategyPlayer(Screen):
                         }
                     control.args = args
                     control.action = DelaySendEvent(event)
-                    #print(f"At column {column}, line {line} event {events.to_string(event)} args {args}")
+                    # print(f"At column {column}, line {line} event {events.to_string(event)} args {args}")
                     self._buttons.append(control)
                     strategy_index += 1
                 else:
@@ -889,14 +889,14 @@ class ScreenStrategyPlayer(Screen):
                 button.add_more_text(player.name)
             else:
                 button.add_more_text("")
-            #print("button.action:", button.action)
-            #print("button.args:", button.args)
+            # print("button.action:", button.action)
+            # print("button.args:", button.args)
         self._touchables.extend(self._buttons)
         self._touchables.append(self._center_control)
         self.update()
 
     def do_event(self, sender, event, args):
-        #print(f"do_event {events.to_string(event)} {args}")
+        # print(f"do_event {events.to_string(event)} {args}")
         if events.PICK_STRATEGY == event:
             strategy = args["strategy"]
             print(f"pick strategy {strategy} for player {self._player}")
@@ -910,7 +910,7 @@ class ScreenStrategyPlayer(Screen):
             self._strategies_to_players[strategy] = self._player
             previous_colour = logic.Strategies.to_colour(self._previous_strategy)
             colour = logic.Strategies.to_colour(strategy)
-            #print(f"previous_colour = {previous_colour} ; colour = {colour}")
+            # print(f"previous_colour = {previous_colour} ; colour = {colour}")
             for button in self._buttons:
                 if button.fill_colour == colour:
                     button.set_more_text(1, self._player.name)
@@ -1101,8 +1101,8 @@ class ScreenAction(Screen):
             button_font,
             inset=2,
         )
-        self._button_tactical_and_component.action = (
-            DelaySendEvent(events.PLAY_TACTICAL_OR_COMPONENT)
+        self._button_tactical_and_component.action = DelaySendEvent(
+            events.PLAY_TACTICAL_OR_COMPONENT
         )
         self._button_tactical_and_component.add_more_text("/")
         self._button_tactical_and_component.add_more_text("Component")

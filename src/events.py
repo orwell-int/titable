@@ -82,7 +82,7 @@ class EventsHanlder:
                 self._registered_once[event].remove(item)
 
     def send_event(self, sender, event: int, args=None):
-        #print(f"send_event event {to_string(event)} args {args}")
+        # print(f"send_event event {to_string(event)} args {args}")
         if event in self._registered:
             for item in self._registered[event]:
                 item.do_event(sender, event, args)

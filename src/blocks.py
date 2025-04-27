@@ -47,8 +47,8 @@ class Touchable:
         if self._debug:
             print(f"touch({x}, {y}) ~ {self.contains(x, y)}")
         if self.contains(x, y):
-            #print(f"touch self._action = {self._action}")
-            #print(f"touch args {self._args}")
+            # print(f"touch self._action = {self._action}")
+            # print(f"touch args {self._args}")
             if self._action is not None:
                 ref_ms = device.get_timeref_ms()
                 if ref_ms >= self._next_ms:
@@ -423,8 +423,8 @@ class ButtonRectangle(Visible, Touchable):
         fill_colour: Colour,
         border_colour: Colour = colours.WHITE,
         font: int = Widgets.FONTS.DejaVu12,
-        disabled_fill_colour = None,
-        disabled_border_colour = None,
+        disabled_fill_colour=None,
+        disabled_border_colour=None,
         inset=0,
     ):
         # super().__init__()
@@ -494,7 +494,9 @@ class ButtonRectangle(Visible, Touchable):
         self._changed = True
 
     def set_more_text(self, index, text):
-        print(f"set_more_text {len(self._more_decoration_texts)} < {index + 1} ; {text}")
+        print(
+            f"set_more_text {len(self._more_decoration_texts)} < {index + 1} ; {text}"
+        )
         if len(self._more_decoration_texts) < index + 1:
             while len(self._more_decoration_texts) < index + 1:
                 self.add_more_text(text)
@@ -691,8 +693,8 @@ class ButtonCircle(Visible, Touchable):
         fill_colour: Colour,
         border_colour: Colour = colours.WHITE,
         font: int = Widgets.FONTS.DejaVu12,
-        disabled_fill_colour = None,
-        disabled_border_colour = None,
+        disabled_fill_colour=None,
+        disabled_border_colour=None,
     ):
         # super().__init__()
         Visible.__init__(self)

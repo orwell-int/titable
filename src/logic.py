@@ -99,9 +99,9 @@ class Game:
         turn: int = 0,
         round: int = 0,
         phase: int = PHASE_STRATEGY,
-        available_strategies = None,
-        players = None,
-        available_colours = None,
+        available_strategies=None,
+        players=None,
+        available_colours=None,
     ):
         self._num_players = num_players
         self._speaker = speaker
@@ -171,7 +171,7 @@ class Game:
     def num_players(self):
         return self._num_players
 
-    def pick_colour(self, colour: Colour, former_colour = None):
+    def pick_colour(self, colour: Colour, former_colour=None):
         if colour not in self._available_colours:
             raise Exception(f"Colour {colour}, not available")
         self._available_colours.remove(colour)
@@ -272,7 +272,7 @@ class Game:
             self._phase = Game.PHASE_STRATEGY
             self._next_round()
 
-    def get_next_player(self) -> 'Player':
+    def get_next_player(self) -> "Player":
         if Game.STATE_PLAY != self._state:
             raise Exception("Cannot only get next player in play state")
         if Game.PHASE_STRATEGY == self._phase:
@@ -365,7 +365,7 @@ class Property:
                 value = open(self._config, "r").read()
                 self._value = self._cast(value)
                 self._saved_value = self._value
-                #print(f"Read {name}:", value)
+                # print(f"Read {name}:", value)
             except Exception as ex:
                 print(ex)
                 print(f"Invalid file {self._name}, ignore")
@@ -432,29 +432,34 @@ class Player:
         game: Game,
         num: int,
         # faction:int = FACTION_NOT_IMPLEMENTED,
-        #score: int = 0,  NOT IMPLEMENTED YET
-        has_passed = None, # bool
-        has_played_strategy = None, # bool
-        strategy = None, # int
+        # score: int = 0,  NOT IMPLEMENTED YET
+        has_passed=None,  # bool
+        has_played_strategy=None,  # bool
+        strategy=None,  # int
     ):
         self._game = game
         self._num = num
-        self._name = Property(
-            f"player_{num}_name",
-            f"Player {num}",
-            f"player ({num})")
+        self._name = Property(f"player_{num}_name", f"Player {num}", f"player ({num})")
         self._saved_colour = PropertyInt(
-            f"player_{num}_colour",
-            colours.PLAYER_BLANK.id,
-            f"colour ({num})")
+            f"player_{num}_colour", colours.PLAYER_BLANK.id, f"colour ({num})"
+        )
         if colours.PLAYER_BLANK.id == self._saved_colour.value:
             self._colour = colours.PLAYER_BLANK
         else:
             self._colour = colours.PLAYER_COLOURS[self._saved_colour.value]
-        #self._score = PropertyInt(f"player_{num}_score", 0, f"score ({num})", score)
-        self._has_passed = PropertyBool(f"player_{num}_has_passed", False, f"has passed ({num})", has_passed)
-        self._has_played_strategy = PropertyBool(f"player_{num}_has_played_strategy", False, f"has played strategy ({num})", has_played_strategy)
-        self._strategy = PropertyInt(f"player_{num}_strategy", Strategies.NONE, f"strategy ({num})", strategy)
+        # self._score = PropertyInt(f"player_{num}_score", 0, f"score ({num})", score)
+        self._has_passed = PropertyBool(
+            f"player_{num}_has_passed", False, f"has passed ({num})", has_passed
+        )
+        self._has_played_strategy = PropertyBool(
+            f"player_{num}_has_played_strategy",
+            False,
+            f"has played strategy ({num})",
+            has_played_strategy,
+        )
+        self._strategy = PropertyInt(
+            f"player_{num}_strategy", Strategies.NONE, f"strategy ({num})", strategy
+        )
         self._observers_name = []
         self._observers_colour = [self._saved_colour]
 

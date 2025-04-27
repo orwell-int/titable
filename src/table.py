@@ -71,7 +71,7 @@ class Titable:
         if (x is None) or (y is None):
             self._touched = False
             return
-        #print(f"table touch {x} {y} touched ? {self._touched}")
+        # print(f"table touch {x} {y} touched ? {self._touched}")
         if self._touched:
             return
         self._touched = True
@@ -105,7 +105,9 @@ class Titable:
         print("switch_to_screen_strategy_player")
         if self._current_screen:
             self._current_screen.hide()
-        self._current_screen = screens.ScreenStrategyPlayer(self._lights, self._game, player.num)
+        self._current_screen = screens.ScreenStrategyPlayer(
+            self._lights, self._game, player.num
+        )
         self._current_screen.draw()
 
     def switch_to_previous_screen(self, return_screen=None):
@@ -174,14 +176,18 @@ def main():
         M5.begin()
         import file_mock
         import colours
+
         print("Mock file operations")
         with file_mock.do():
-            for num, colour, strategy in zip(range(6), colours.PLAYER_COLOURS, logic.Strategies.ALL):
+            for num, colour, strategy in zip(
+                range(6), colours.PLAYER_COLOURS, logic.Strategies.ALL
+            ):
                 open(f"titable/player_{num + 1}_colour", "w").write(str(colour.id))
                 open(f"titable/player_{num + 1}_strategy", "w").write(str(strategy))
             inner_main()
     else:
         inner_main()
+
 
 if "__main__" == __name__:
     main()

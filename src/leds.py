@@ -12,6 +12,7 @@ if device.is_micropython():
 else:
     import requests as requests2
 
+
 class Lights:
     MAX_BRIGHTNESS = 100
     MODE_RELATIVE = "."
@@ -252,7 +253,7 @@ def main():
     import time
 
     lights = Lights(only_print=False, reset_file=True)
-    #lights.set_override(colours.PLAYER_BLACK, 75)
+    # lights.set_override(colours.PLAYER_BLACK, 75)
     lights.set_override(colours.PLAYER_BLACK, 32)
     lights.set_override(colours.PLAYER_BLUE, 29)
     lights.set_override(colours.PLAYER_GREEN, 24)

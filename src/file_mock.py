@@ -78,7 +78,7 @@ def mock_create_dir_results(path):
     STATS[str(p)] = 0x4000
 
 
-# it is a bit of a hack to rely on mock_create_dir_results 
+# it is a bit of a hack to rely on mock_create_dir_results
 def mock_create_dirs_results(paths):
     global PRINT_IN_MOCK
     if PRINT_IN_MOCK:
