@@ -996,6 +996,10 @@ class ScreenStrategyPlayer(Screen):
             button.draw()
         self._center_control.draw()
 
+    def hide(self):
+        super().hide()
+        self._player.write_strategy()
+
 
 class ScreenAction(Screen):
     """

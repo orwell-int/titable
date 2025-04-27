@@ -1,3 +1,5 @@
+import os
+
 import colours
 from colours import Colour
 import device
@@ -351,11 +353,12 @@ class Game:
 
 
 class Property:
-    def __init__(self, filename, default, name=None):
+    def __init__(self, filename, default, name=None, value=None):
         self._config = "titable/" + filename
-        self._value = default
+        self._default = default
         self._name = name if name else filename
         self._saved_value = default
+        self._value = value
 
         if device.file_exists_and_not_empty(self._config):
             try:
@@ -372,7 +375,10 @@ class Property:
 
     @property
     def value(self):
-        return self._value
+        if self._value is None:
+            return self._default
+        else:
+            return self._value
 
     @value.setter
     def value(self, value):
@@ -387,11 +393,18 @@ class Property:
 
     def write(self):
         if self._value != self._saved_value:
-            print(f"write {self._config}: {self._value}")
-            open(self._config, "w").write(str(self._value))
+            if self._value == self._default or self._value == None:
+                if os.path.exists(self._config):
+                    os.remove(self._config)
+                    print(f"erase {self._config}")
+                else:
+                    print(f"write {self._config} SKIPPED (empty)")
+            else:
+                print(f"write {self._config}: {self._value}")
+                open(self._config, "w").write(str(self._value))
             self._saved_value = self._value
         else:
-            print(f"write {self._config} SKIPPED")
+            print(f"write {self._config} SKIPPED (unchanged)")
 
     def notify(self, key, value):
         # it is not very nice to have a specific case...
@@ -407,6 +420,11 @@ class PropertyInt(Property):
         return int(value)
 
 
+class PropertyBool(Property):
+    def _cast(self, value):
+        return bool(value)
+
+
 class Player:
     # FACTION_NOT_IMPLEMENTED = 0
     def __init__(
@@ -414,14 +432,14 @@ class Player:
         game: Game,
         num: int,
         # faction:int = FACTION_NOT_IMPLEMENTED,
-        score: int = 0,
-        has_passed: bool = False,
-        has_played_strategy: bool = False,
-        strategy: int = Strategies.NONE,
+        #score: int = 0,  NOT IMPLEMENTED YET
+        has_passed = None, # bool
+        has_played_strategy = None, # bool
+        strategy = None, # int
     ):
         self._game = game
         self._num = num
-        self._saved_name = Property(
+        self._name = Property(
             f"player_{num}_name",
             f"Player {num}",
             f"player ({num})")
@@ -433,10 +451,10 @@ class Player:
             self._colour = colours.PLAYER_BLANK
         else:
             self._colour = colours.PLAYER_COLOURS[self._saved_colour.value]
-        self._score = score
-        self._has_passed = has_passed
-        self._has_played_strategy = has_played_strategy
-        self._strategy = strategy
+        #self._score = PropertyInt(f"player_{num}_score", 0, f"score ({num})", score)
+        self._has_passed = PropertyBool(f"player_{num}_has_passed", False, f"has passed ({num})", has_passed)
+        self._has_played_strategy = PropertyBool(f"player_{num}_has_played_strategy", False, f"has played strategy ({num})", has_played_strategy)
+        self._strategy = PropertyInt(f"player_{num}_strategy", Strategies.NONE, f"strategy ({num})", strategy)
         self._observers_name = []
         self._observers_colour = [self._saved_colour]
 
@@ -454,20 +472,20 @@ class Player:
     def remove_observer_colour(self, observer):
         self._observers_colour.remove(observer)
 
-    @property
-    def score(self):
-        return self._score
+    # @property
+    # def score(self):
+    #     return self._score
 
-    def add_score(self, delta: int):
-        self._score += delta
+    # def add_score(self, delta: int):
+    #     self._score += delta
 
     @property
     def name(self):
-        return self._saved_name.value
+        return self._name.value
 
     @name.setter
     def name(self, name):
-        if self._saved_name.set(name):
+        if self._name.set(name):
             if self._observers_name:
                 for observer in self._observers_name:
                     observer.notify("name", name)
@@ -493,9 +511,9 @@ class Player:
     def can_play(self):
         phase = self._game.phase
         if Game.PHASE_STRATEGY == phase:
-            return self._strategy == Strategies.NONE
+            return self._strategy.value == Strategies.NONE
         elif Game.PHASE_ACTION == phase:
-            return not self._has_passed
+            return not self._has_passed.value
         else:
             # this might be more complex, but we don't really know
             # maybe it makes no sense to call this for other phases now.
@@ -506,7 +524,7 @@ class Player:
         phase = self._game.phase
         if Game.PHASE_ACTION != phase:
             return False
-        return self._has_played_strategy
+        return self._has_played_strategy.value
 
     def set_speaker(self):
         self._game.set_speaker(self._num)
@@ -516,15 +534,15 @@ class Player:
 
     @property
     def strategy(self):
-        return self._strategy
+        return self._strategy.value
 
     @strategy.setter
     def strategy(self, strategy: int):
-        self._strategy = strategy
-        self._has_played_strategy = False
+        self._strategy.value = strategy
+        self._has_played_strategy.value = False
 
     def use_strategy(self):
-        self._has_played_strategy = True
+        self._has_played_strategy.value = True
 
     @property
     def previous(self):
@@ -535,20 +553,33 @@ class Player:
         return self._game.get_player(self.num + 1)
 
     def __repr__(self):
-        string = f"Player(num={self._num}, name={self._saved_name.value}, "
-        string += f"colour={self._colour}, has_passed={self._has_passed}, "
-        string += f"has_played_strategy={self._has_played_strategy}, "
-        string += f"strategy={self._strategy})"
+        string = f"Player(num={self._num}, name={self._name.value}, "
+        string += f"colour={self._colour}, has_passed={self._has_passed.value}, "
+        string += f"has_played_strategy={self._has_played_strategy.value}, "
+        string += f"strategy={self._strategy.value})"
         return string
 
     def __str__(self):
         return self.__repr__()
 
     def write_name(self):
-        self._saved_name.write()
+        self._name.write()
 
     def write_colour(self):
         self._saved_colour.write()
+
+    def write_strategy(self):
+        self._strategy.write()
+
+    def write_others(self):
+        self._has_played_strategy.write()
+        self._has_passed.write()
+
+    def write(self):
+        self.write_name()
+        self.write_colour()
+        self.write_strategy()
+        self.write_others()
 
 
 def main():

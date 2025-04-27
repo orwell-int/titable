@@ -173,10 +173,12 @@ def main():
     if not device.is_micropython():
         M5.begin()
         import file_mock
+        import colours
         print("Mock file operations")
         with file_mock.do():
-            for num in range(6):
-                open(f"titable/player_{num + 1}_colour", "w").write(str(num))
+            for num, colour, strategy in zip(range(6), colours.PLAYER_COLOURS, logic.Strategies.ALL):
+                open(f"titable/player_{num + 1}_colour", "w").write(str(colour.id))
+                open(f"titable/player_{num + 1}_strategy", "w").write(str(strategy))
             inner_main()
     else:
         inner_main()
