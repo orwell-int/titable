@@ -20,7 +20,11 @@ PLAY_SKIP = 34
 PLAY_PASS = 35
 RESET_PHASE = 48
 RESET_ROUND = 49
+NEXT_ROUND = 60
+NEXT_TURN = 61
 WELCOME = 99
+SAVE_SCREEN = 100
+UNSAVE_SCREEN = 101
 
 ALL_EVENTS = [
     RETURN,
@@ -44,7 +48,11 @@ ALL_EVENTS = [
     PLAY_PASS,
     RESET_PHASE,
     RESET_ROUND,
+    NEXT_ROUND,
+    NEXT_TURN,
     WELCOME,
+    SAVE_SCREEN,
+    UNSAVE_SCREEN,
 ]
 
 
@@ -140,7 +148,15 @@ def to_string(event: int):
         return "RESET_PHASE"
     elif RESET_ROUND == event:
         return "RESET_ROUND"
+    elif NEXT_ROUND == event:
+        return "NEXT_ROUND"
+    elif NEXT_TURN == event:
+        return "NEXT_TURN"
     elif WELCOME == event:
         return "WELCOME"
+    elif SAVE_SCREEN == event:
+        return "SAVE_SCREEN"
+    elif UNSAVE_SCREEN == event:
+        return "UNSAVE_SCREEN"
     else:
         return "OOPS"

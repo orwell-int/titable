@@ -10,17 +10,29 @@ import device
 import M5
 
 
+class Point:
+    def __init__(self, num, round, turn, iteration, event, player_num):
+        self.num = num
+        self.round = round
+        self.turn = turn
+        self.iteration = iteration
+        self.event = event
+        self.player_num = player_num
+
+
 class Titable:
     def __init__(self, leds_only_print=False):
         self._game = logic.Game()
         self._screens = {}
-        self._current_screen_type = ScreenTypes.WELCOME
         self._current_screen = None
         self._saved_screen = None
         self._lights = leds.Lights(only_print=leds_only_print)
+        self._play_event = None
         self.switch_to_screen_welcome()
         events.HANDLER.register(events.ALL, self)
         self._touched = False
+        self._num_events = 0
+        self._history = []
 
     def do_event(self, sender, event: int, args):
         if events.RETURN == event:
@@ -49,23 +61,32 @@ class Titable:
         elif events.SETUP_NAME == event:
             pass
         elif events.NEXT == event:
-            pass
+            self.next()
         elif events.PREVIOUS == event:
-            pass
+            phase = args["phase"]
+            self.previous(phase)
         elif events.PLAY_STRATEGY == event:
-            pass
+            self._play_event = event
         elif events.PLAY_TACTICAL_OR_COMPONENT == event:
-            pass
+            self._play_event = event
         elif events.PLAY_SKIP == event:
-            pass
+            self._play_event = event
         elif events.PLAY_PASS == event:
-            pass
+            self._play_event = event
         elif events.RESET_PHASE == event:
             pass
         elif events.RESET_ROUND == event:
             pass
         elif events.WELCOME == event:
-            pass
+            self._game.stop_playing()
+            self.switch_to_screen_welcome()
+        elif events.SAVE_SCREEN == event:
+            if self._current_screen:
+                self._saved_screen = self._current_screen.screen_type
+            else:
+                print("Unable to save current screen (None)")
+        elif events.UNSAVE_SCREEN == event:
+            self._saved_screen = None
 
     def touch(self, x: int, y: int):
         if (x is None) or (y is None):
@@ -110,10 +131,54 @@ class Titable:
         )
         self._current_screen.draw()
 
+    def next(self):
+        print("next...")
+        if self._play_event:
+            if events.PLAY_STRATEGY == self._play_event:
+                self._game.current_player.use_strategy()
+            elif events.PLAY_TACTICAL_OR_COMPONENT == self._play_event:
+                pass
+            elif events.PLAY_SKIP == self._play_event:
+                pass
+            elif events.PLAY_PASS == self._play_event:
+                assert self._game.current_player.can_pass
+                self._game.current_player.do_pass()
+            self._append_event(self._play_event, self._game.current_player.num)
+        phase = self._game.next()
+        if logic.Game.PHASE_ACTION == phase:
+            self.switch_to_screen_action()
+        else:
+            raise Exception("Not implemented")
+
+    def previous(self, phase):
+        print(f"previous({phase})...")
+        if logic.Game.PHASE_STRATEGY == phase:
+            self.switch_to_screen_startegy()
+
+    def switch_to_screen_action(self):
+        print("switch_to_screen_action")
+        if self._current_screen:
+            self._current_screen.hide()
+        self._current_screen = screens.ScreenAction(self._lights, self._game)
+        self._current_screen.draw()
+
+    def switch_to_screen_menu(self):
+        print("switch_to_screen_menu")
+        if self._current_screen:
+            self._current_screen.hide()
+        if self._saved_screen is None:
+            self._saved_screen = self._current_screen.screen_type
+        self._current_screen = screens.ScreenMenu(self._lights)
+        self._current_screen.draw()
+
     def switch_to_previous_screen(self, return_screen=None):
+        print(f"switch_to_previous_screen({return_screen})")
         assert self._current_screen is not None
         if return_screen is None:
             return_screen = self._current_screen.on_return
+            print(f"switch_to_previous_screen -> {return_screen}")
+        if ScreenTypes.SAVED_SCREEN == return_screen:
+            return_screen = self._saved_screen
         if ScreenTypes.WELCOME == return_screen:
             self.switch_to_screen_welcome()
         elif ScreenTypes.SETUP_PLAYERS == return_screen:
@@ -127,13 +192,13 @@ class Titable:
         elif ScreenTypes.STRATEGY_PLAYER == return_screen:
             raise Exception("It is not possible to switch back to STRATEGY_PLAYER")
         elif ScreenTypes.ACTION_PLAYER == return_screen:
-            pass
+            self.switch_to_screen_action()
         elif ScreenTypes.STATUS_PLAYER == return_screen:
             pass
         elif ScreenTypes.MENU == return_screen:
-            pass
-        elif ScreenTypes.SAVED_SCREEN == return_screen:
-            pass
+            self.switch_to_screen_menu()
+        else:
+            raise Exception("Unhandled (return) screen type:", return_screen)
 
     def switch_to_screen_setup(self):
         print("switch_to_screen_setup")
@@ -150,6 +215,16 @@ class Titable:
             self._lights, self._game.players, player
         )
         self._current_screen.draw()
+
+    def _append_event(self, event, player_num=None):
+        self._num_events += 1
+        parts = (self._game.round, self._game.turn, self._game.iteration, event)
+        self._history.append(Point(self._num_events, *parts, player_num))
+        path = "titable/events/" + str(self._num_events)
+        content = [str(x) for x in parts]
+        if player_num:
+            content.append(str(player_num))
+        device.create_file(path, "\n".join(content))
 
 
 def inner_main():
@@ -183,7 +258,7 @@ def main():
                 range(6), colours.PLAYER_COLOURS, logic.Strategies.ALL
             ):
                 open(f"titable/player_{num + 1}_colour", "w").write(str(colour.id))
-                open(f"titable/player_{num + 1}_strategy", "w").write(str(strategy))
+                open(f"titable/1/player_{num + 1}_strategy", "w").write(str(strategy))
             inner_main()
     else:
         inner_main()

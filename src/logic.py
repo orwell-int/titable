@@ -81,6 +81,37 @@ class Strategies:
         return colours.STRATEGY_COLOURS[strategy - 1]
 
 
+class Transition:
+    def __init__(self, old, new=None):
+        self._old = old
+        self._new = new
+
+    @property
+    def changed(self):
+        return self._old != self._new and self._new != None
+
+
+class MetaTransition:
+    def __init__(self):
+        self.player = None
+        self.phase = None
+        self.turn = None
+        self.round = None
+
+    @property
+    def empty(self):
+        return (
+            self.player is None
+            or not self.player.changed
+            and self.phase is None
+            or not self.phase.changed
+            and self.turn is None
+            or not self.turn.changed
+            and self.round is None
+            or not self.round.changed
+        )
+
+
 class Game:
     # create the players with their colours
     STATE_INIT = 0
@@ -96,8 +127,8 @@ class Game:
         speaker: int = 0,
         current_player: int = 0,
         state: int = STATE_INIT,
-        turn: int = 0,
-        round: int = 0,
+        turn: int = 1,
+        round: int = 1,
         phase: int = PHASE_STRATEGY,
         available_strategies=None,
         players=None,
@@ -110,6 +141,7 @@ class Game:
         self._turn = turn
         self._round = round
         self._phase = phase
+        self._iteration = 0  # count inside a turn
         if available_strategies:
             self._available_strategies = available_strategies
         else:
@@ -184,6 +216,11 @@ class Game:
         return ready
 
     @property
+    def players_have_strategy(self):
+        ready = not any([Strategies.NONE == p.strategy for p in self._players])
+        return ready
+
+    @property
     def phase(self):
         return self._phase
 
@@ -200,6 +237,58 @@ class Game:
 
     def _next_turn(self):
         self._turn += 1
+
+    @property
+    def iteration(self):
+        return self._iteration
+
+    def _compute_time_key(self, round, turn, iteration):
+        return round * 1000 + turn * 10 + iteration
+
+    @property
+    def time_key(self):
+        return self._compute_time_key(self._round, self._turn, self._iteration)
+
+    def get_time_key(self, iteration, turn=0, round=0):
+        must_be_explicit = False
+        if round == 0:
+            round = self._round
+        elif round != self._round:
+            must_be_explicit = True
+            if round < 0:
+                round = self._round - round
+                if round <= 0:
+                    raise Exception(f"Computed invalid value for round: {round}")
+        if turn == 0:
+            if must_be_explicit:
+                raise Exception("Turn must be explicit")
+            else:
+                turn = self._turn
+        elif turn != self._turn:
+            must_be_explicit = True
+            if turn < 0:
+                if must_be_explicit:
+                    raise Exception("Turn must be explicit")
+                else:
+                    turn = self._turn - turn
+                    if turn <= 0:
+                        raise Exception(f"Computed invalid value for turn: {turn}")
+        if iteration == 0:
+            if must_be_explicit:
+                raise Exception("iteration must be explicit")
+            else:
+                iteration = self._iteration
+        elif iteration != self._iteration:
+            if iteration < 0:
+                if must_be_explicit:
+                    raise Exception("iteration must be explicit")
+                else:
+                    iteration = self._iteration - iteration
+                    if iteration <= 0:
+                        raise Exception(
+                            f"Computed invalid value for iteration: {iteration}"
+                        )
+        return self._compute_time_key(round, turn, iteration)
 
     def switch_state(self, new_state):
         self._state = new_state
@@ -236,6 +325,7 @@ class Game:
         for strategy in self._available_strategies.keys():
             self._available_strategies[strategy] += 1
         self._ordered_players = self.order_players()
+        self._iteration = 0
 
     def _end_phase_action(self):
         raise Exception("Cannot only get next player in play state")
@@ -247,7 +337,7 @@ class Game:
         raise Exception("Cannot only get next player in play state")
 
     def order_players(self):
-        return sorted(self._players, key=lambda x: x._strategy * 10 + x._num)
+        return sorted(self._players, key=lambda x: x.strategy * 10 + x.num)
 
     def set_speaker(self, num_player):
         self._speaker = num_player
@@ -255,9 +345,16 @@ class Game:
     def is_speaker(self, num_player):
         return self._speaker == num_player
 
+    def next(self):
+        if Game.PHASE_STRATEGY == self._phase:
+            if self.players_have_strategy:
+                self._end_phase_strategy()
+                self._phase = Game.PHASE_ACTION
+        return self._phase
+
     def next_phase(self):
         if Game.STATE_PLAY != self._state:
-            raise Exception("Cannot only only go to next phase in play state")
+            raise Exception("Can only go to next phase in play state")
         if Game.PHASE_STRATEGY == self._phase:
             self._end_phase_strategy()
             self._phase = Game.PHASE_ACTION
@@ -353,22 +450,36 @@ class Game:
 
 
 class Property:
-    def __init__(self, filename, default, name=None, value=None):
-        self._config = "titable/" + filename
+    def __init__(self, filename, default, name=None, value=None, game=None):
+        self._config_prefix = "titable/"
+        self._filename = filename
         self._default = default
         self._name = name if name else filename
         self._saved_value = default
         self._value = value
+        self._game = game
+        self._last_round = None
 
-        if device.file_exists_and_not_empty(self._config):
+        path = self._get_path()
+        if device.file_exists_and_not_empty(path):
             try:
-                value = open(self._config, "r").read()
+                value = open(path, "r").read()
                 self._value = self._cast(value)
                 self._saved_value = self._value
                 # print(f"Read {name}:", value)
             except Exception as ex:
                 print(ex)
                 print(f"Invalid file {self._name}, ignore")
+        else:
+            print(f"File does not exist: {path}")
+
+    def _get_path(self):
+        path = self._config_prefix
+        if self._game is not None:
+            self._last_round = self._game.round
+            path += str(self._game.round) + "/"
+        path += self._filename
+        return path
 
     def _cast(self, value):
         return value
@@ -392,19 +503,24 @@ class Property:
             return False
 
     def write(self):
-        if self._value != self._saved_value:
+        if self._game:
+            round_changed = self._last_round != self._game.round
+        else:
+            round_changed = False
+        path = self._get_path()
+        if self._value != self._saved_value or round_changed:
             if self._value == self._default or self._value == None:
-                if os.path.exists(self._config):
-                    os.remove(self._config)
-                    print(f"erase {self._config}")
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"erase {path}")
                 else:
-                    print(f"write {self._config} SKIPPED (empty)")
+                    print(f"write {path} SKIPPED (empty)")
             else:
-                print(f"write {self._config}: {self._value}")
-                open(self._config, "w").write(str(self._value))
+                print(f"write {path}: {self._value}")
+                open(path, "w").write(str(self._value))
             self._saved_value = self._value
         else:
-            print(f"write {self._config} SKIPPED (unchanged)")
+            print(f"write {path} SKIPPED (unchanged)")
 
     def notify(self, key, value):
         # it is not very nice to have a specific case...
@@ -449,16 +565,21 @@ class Player:
             self._colour = colours.PLAYER_COLOURS[self._saved_colour.value]
         # self._score = PropertyInt(f"player_{num}_score", 0, f"score ({num})", score)
         self._has_passed = PropertyBool(
-            f"player_{num}_has_passed", False, f"has passed ({num})", has_passed
+            f"player_{num}_has_passed", False, f"has passed ({num})", has_passed, game
         )
         self._has_played_strategy = PropertyBool(
             f"player_{num}_has_played_strategy",
             False,
             f"has played strategy ({num})",
             has_played_strategy,
+            game,
         )
         self._strategy = PropertyInt(
-            f"player_{num}_strategy", Strategies.NONE, f"strategy ({num})", strategy
+            f"player_{num}_strategy",
+            Strategies.NONE,
+            f"strategy ({num})",
+            strategy,
+            game,
         )
         self._observers_name = []
         self._observers_colour = [self._saved_colour]
@@ -531,6 +652,13 @@ class Player:
             return False
         return self._has_played_strategy.value
 
+    @property
+    def has_passed(self):
+        return self._has_passed.value
+
+    def do_pass(self):
+        self._has_passed = True
+
     def set_speaker(self):
         self._game.set_speaker(self._num)
 
@@ -545,6 +673,10 @@ class Player:
     def strategy(self, strategy: int):
         self._strategy.value = strategy
         self._has_played_strategy.value = False
+
+    @property
+    def has_played_strategy(self):
+        return self._has_played_strategy.value
 
     def use_strategy(self):
         self._has_played_strategy.value = True
