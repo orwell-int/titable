@@ -1054,6 +1054,8 @@ class ScreenAction(Screen):
     def __init__(self, lights: leds.Lights, game: logic.Game):
         # game.current_player seems better then game.get_player(index)
         player = game.current_player
+        player_previous = game.previous_player
+        player_next = game.next_player
         super().__init__(
             lights,
             ScreenTypes.ACTION_PLAYER,
@@ -1068,7 +1070,7 @@ class ScreenAction(Screen):
         self._game = game
         self.on_return = ScreenTypes.MENU
         self._highlighted = None
-        self._is_last_player = player.next == player
+        self._is_last_player = player_next == player
         events.HANDLER.register(events.PLAY_STRATEGY, self)
         events.HANDLER.register(events.PLAY_TACTICAL_OR_COMPONENT, self)
         events.HANDLER.register(events.PLAY_SKIP, self)
@@ -1084,31 +1086,34 @@ class ScreenAction(Screen):
         action_button_sx = (INNER_X + 1) - 2 * player_button_sx
         small_button_height = (INNER_Y + 1) // 3 + 1
 
-        print("current player num", player.num)
-        print("previous player num", player.previous.num)
-        print("next player num", player.next.num)
+        game.print_player_nums("ScreenAction")
+        if not player_next:
+            raise Exception("No next player!")
 
         text_previous = "previous"
+        if player_previous:
+            colour = player_previous.colour
+        else:
+            colour = colours.PALETTE_LIGHT_GREEN
         self._button_previous = blocks.ButtonRectangle(
             LEFT_BAR_WIDTH,
             TITLE_HEIGHT,
             player_button_sx,
             INNER_Y + 1,
             text_previous,
-            player.previous.colour,
+            colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
         self._button_previous.action = DelaySendEvent(events.PREVIOUS)
-        if self._game.turn == 1 and self._game.iteration == 0:
+        if player_previous:
+            self._button_previous.add_more_text(player_previous.name)
+            self._button_previous.args = {"phase": logic.Game.PHASE_ACTION}
+        else:
             self._button_previous.add_more_text("strategy")
             self._button_previous.add_more_text("phase")
             self._button_previous.args = {"phase": logic.Game.PHASE_STRATEGY}
-            self._button_previous.fill_colour = colours.PALETTE_LIGHT_GREEN
-        else:
-            self._button_previous.add_more_text(player.previous.name)
-            self._button_previous.args = {"phase": logic.Game.PHASE_ACTION}
 
         text_next = "next"
         self._button_next = blocks.ButtonRectangle(
@@ -1117,13 +1122,13 @@ class ScreenAction(Screen):
             player_button_sx,
             INNER_Y + 1,
             text_next,
-            player.next.colour,
+            player_next.colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
         self._button_next.action = DelaySendEvent(events.NEXT)
-        self._button_next.add_more_text(player.next.name)
+        self._button_next.add_more_text(player_next.name)
         self._button_next.enabled = False
 
         self._button_strategy = blocks.ButtonRectangle(
@@ -1251,7 +1256,6 @@ class ScreenAgenda(Screen):
             "agenda",
             "Agenda",
             colours.WHITE,
-            has_return=False,
         )
         print("ScreenAgenda")
         self._game = game
@@ -1349,6 +1353,8 @@ class ScreenStatus(Screen):
     def __init__(self, lights: leds.Lights, game: logic.Game):
         # game.current_player seems better then game.get_player(index)
         player = game.current_player
+        player_previous = game.previous_player
+        player_next = game.next_player
         super().__init__(
             lights,
             ScreenTypes.STATUS_PLAYER,
@@ -1358,7 +1364,7 @@ class ScreenStatus(Screen):
             side_colour=player.colour,
             game=game,
             has_round=True,
-            has_turn=True,
+            has_turn=False,
         )
         self._game = game
         self.on_return = ScreenTypes.MENU
@@ -1372,35 +1378,50 @@ class ScreenStatus(Screen):
         action_button_sx = (INNER_X + 1) - 2 * player_button_sx
         small_button_height = (INNER_Y + 1) // 3 + 1
 
-        text_previous = "previous"
+        if player_previous:
+            colour = player_previous.colour
+            text_previous = "previous"
+        else:
+            colour = colours.PALETTE_LIGHT_GREEN
+            text_previous = "agenda"
         self._button_previous = blocks.ButtonRectangle(
             LEFT_BAR_WIDTH,
             TITLE_HEIGHT,
             player_button_sx,
             INNER_Y + 1,
             text_previous,
-            player.previous.colour,
+            colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
         self._button_previous.action = DelaySendEvent(events.PREVIOUS)
-        self._button_previous.add_more_text(player.previous.name)
+        if player_previous:
+            self._button_previous.add_more_text(player_previous.name)
+        else:
+            self._button_previous.add_more_text("phase")
 
         text_next = "next"
+        if player_next:
+            colour = player_next.colour
+        else:
+            colour = colours.PALETTE_LIGHT_GREEN
         self._button_next = blocks.ButtonRectangle(
             MAX_X - player_button_sx,
             TITLE_HEIGHT,
             player_button_sx,
             INNER_Y + 1,
             text_next,
-            player.next.colour,
+            colour,
             Screen.COLOUR_BORDER,
             button_font,
             inset=2,
         )
         self._button_next.action = DelaySendEvent(events.NEXT)
-        self._button_next.add_more_text(player.next.name)
+        if player_next:
+            self._button_next.add_more_text(player_next.name)
+        else:
+            self._button_next.add_more_text("round")
 
         y_offset = 30
         self._description = blocks.Rectangle(
@@ -1442,7 +1463,6 @@ class ScreenMenu(Screen):
             "menu",
             "TI 4 assistant",
             colours.WHITE,
-            has_return=True,
         )
         self.on_return = ScreenTypes.SAVED_SCREEN
         button_sx = 150

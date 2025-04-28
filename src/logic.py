@@ -137,6 +137,8 @@ class Game:
         self._num_players = num_players
         self._speaker = speaker
         self._current_player = current_player
+        self._previous_player = None
+        self._next_player = None
         self._state = state
         self._turn = turn
         self._round = round
@@ -190,11 +192,10 @@ class Game:
         self._players.append(player)
 
     def get_player(self, num: int):
+        index = (num - 1) % self._num_players
         if self._ordered_players:
-            index = (num - 1) % len(self._ordered_players)
             return self._ordered_players[index]
         else:
-            index = (num - 1) % self._num_players
             return self._players[index]
 
     # may not be a good idea
@@ -238,7 +239,11 @@ class Game:
         return self._round
 
     def _next_round(self):
-        self._turn += 1
+        self._round += 1
+        self._turn = 1
+        for player in self._players:
+            player.go_to_next_turn()
+        self._start_phase_strategy()
 
     @property
     def turn(self):
@@ -324,6 +329,7 @@ class Game:
         return self._available_strategies
 
     def _start_phase_strategy(self):
+        self._previous_player = None
         self._ordered_players = []
         self._turn += 1
         self._phase = Game.PHASE_STRATEGY
@@ -336,19 +342,35 @@ class Game:
         self._ordered_players = self.order_players()
         print("ordered players:")
         print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
+
+    def _start_phase_action(self):
         self._iteration = 0
         self._current_player = 1
+        self._next_player = 2
+        self._previous_player = None
+        self._active_players = self._num_players
+        self._player_index_to_hide_now = None
+        self._player_index_to_hide_next = None
 
     def _end_phase_action(self):
         print("_end_phase_action")
         self._iteration = 0
-        pass
+        self._ordered_players = []
+        for player in self._players:
+            player.unhide()
+        self._turn = 0
+
+    def _start_phase_status(self):
+        self._iteration = 0
+        self._current_player = 1
+        self._next_player = 2
+        self._previous_player = None
 
     def _end_phase_status(self):
-        raise Exception("Cannot only get next player in play state")
+        self._iteration = 0
 
     def _end_phase_agenda(self):
-        raise Exception("Cannot only get next player in play state")
+        pass
 
     def order_players(self):
         return sorted(self._players, key=lambda x: x.strategy * 10 + x.num)
@@ -359,82 +381,160 @@ class Game:
     def is_speaker(self, num_player):
         return self._speaker == num_player
 
+    def print_player_nums(self, text):
+        p = self.previous_player.num if self.previous_player else "x"
+        c = self.current_player.num if self.current_player else "x"
+        n = self.next_player.num if self.next_player else "x"
+        print(f"{text} p | c | n : {p} | {c} | {n}")
+
     def next(self):
+        self.print_player_nums("next")
         if Game.PHASE_STRATEGY == self._phase:
             if self.players_have_strategy:
                 self._end_phase_strategy()
                 self._phase = Game.PHASE_ACTION
+                self._start_phase_action()
         elif Game.PHASE_ACTION == self._phase:
             if self.players_have_passed:
                 self._end_phase_action()
                 self._phase = Game.PHASE_AGENDA
             else:
-                if self._player_index_to_hide_now is not None:
-                    player_index = self._player_index_to_hide_now
-                    self._player_index_to_hide_now = None
-                    self._ordered_players[player_index].hide()
-                if self._player_index_to_hide_next is not None:
-                    self._player_index_to_hide_now = self._player_index_to_hide_next
-                    self._player_index_to_hide_next = None
-                # print(f"Future hides: {self._player_index_to_hide_now} | {self._player_index_to_hide_next}")
-                self._current_player = self._current_player + 1
-                next_turn = False
-                loop = True
-                while loop:
-                    # print(f" % current player:", self._current_player)
-                    if self._current_player > len(self._ordered_players):
-                        next_turn = True
-                        self._current_player = 1
-                    player = self._ordered_players[self._current_player - 1]
-                    if player.hidden:
-                        self._current_player += 1
-                    else:
-                        loop = False
-                if next_turn:
-                    self._iteration = 0
-                    self._turn += 1
-                else:
-                    self._iteration += 1
+                self._previous_player = self._current_player
+                self._hide_player()
+                self._current_player = self._next_player
+                self._compute_next_player()
                 print("ordered players:")
                 print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
+                self.print_player_nums("next ++action")
         elif Game.PHASE_AGENDA == self._phase:
             self._end_phase_agenda()
-            self._phase = Game.PHASE_STATUS
+            # skip status phase for now
+            skip_status_phase = True
+            if skip_status_phase:
+                self._end_phase_status()
+                self._phase = Game.PHASE_STRATEGY
+                self._next_round()
+            else:
+                self._phase = Game.PHASE_STATUS
+                self._start_phase_status()
         elif Game.PHASE_STATUS == self._phase:
-            self._end_phase_status()
-            self._phase = Game.PHASE_STRATEGY
-            self._next_round()
+            if self._next_player is None:
+                self._end_phase_status()
+                self._phase = Game.PHASE_STRATEGY
+                self._next_round()
+            else:
+                self._previous_player = self._current_player
+                self._current_player = self._next_player
+                self._compute_next_player()
+                self.print_player_nums("next ++status")
         return self._phase
 
-    def get_next_player(self) -> "Player":
-        if Game.STATE_PLAY != self._state:
-            raise Exception("Cannot only get next player in play state")
-        if Game.PHASE_STRATEGY == self._phase:
-            player = None
-            if 0 == self._speaker:
-                raise Exception("Missing speaker")
-            if 0 == self._current_player:
-                self._current_player = self._speaker
-                player = self.get_player(self._current_player)
-            else:
-                for delta in range(self._num_players):
-                    new_num = (self._current_player + delta) % 6 + 1
-                    player = self.get_player(new_num)
-                    if player.can_play:
-                        self._current_player = new_num
-                        break
-            if player is None:
-                raise Exception("Bug: no player found in get_next_player")
-            return player
-        elif Game.PHASE_ACTION == self._phase:
-            raise Exception("Not implemented yet!")
+    # def get_next_player(self) -> "Player":
+    #     if Game.STATE_PLAY != self._state:
+    #         raise Exception("Cannot only get next player in play state")
+    #     if Game.PHASE_STRATEGY == self._phase:
+    #         player = None
+    #         if 0 == self._speaker:
+    #             raise Exception("Missing speaker")
+    #         if 0 == self._current_player:
+    #             self._current_player = self._speaker
+    #             player = self.get_player(self._current_player)
+    #         else:
+    #             for delta in range(self._num_players):
+    #                 new_num = (self._current_player + delta) % 6 + 1
+    #                 player = self.get_player(new_num)
+    #                 if player.can_play:
+    #                     self._current_player = new_num
+    #                     break
+    #         if player is None:
+    #             raise Exception("Bug: no player found in get_next_player")
+    #         return player
+    #     elif Game.PHASE_ACTION == self._phase:
+    #         raise Exception("Not implemented yet!")
 
     @property
     def current_player(self):
+        if self._current_player is None:
+            return None
         if self._ordered_players:
             return self._ordered_players[self._current_player - 1]
         else:
             return self._players[self._current_player - 1]
+
+    @property
+    def previous_player(self):
+        if Game.PHASE_STRATEGY == self._phase:
+            return None
+        elif Game.PHASE_ACTION == self._phase:
+            if self._previous_player is None:
+                return None
+            return self._ordered_players[self._previous_player - 1]
+        elif Game.PHASE_AGENDA == self._phase:
+            # not implemented...
+            return None
+        elif Game.PHASE_STATUS == self._phase:
+            if self._previous_player is None:
+                return None
+            return self._players[self._previous_player - 1]
+        else:
+            return None
+
+    def _hide_player(self):
+        if self._player_index_to_hide_now is not None:
+            player_index = self._player_index_to_hide_now
+            self._player_index_to_hide_now = None
+            self._ordered_players[player_index].hide()
+        if self._player_index_to_hide_next is not None:
+            self._player_index_to_hide_now = self._player_index_to_hide_next
+            self._player_index_to_hide_next = None
+        # print(f"Future hides: {self._player_index_to_hide_now} | {self._player_index_to_hide_next}")
+
+    def _compute_next_player(self):
+        # print(f"_compute_next_player R {self._round} T {self._turn} I {self._iteration}")
+        if Game.PHASE_ACTION == self._phase:
+            self._next_player = self._next_player + 1
+            next_turn = False
+            loop = True
+            while loop:
+                # print(f" % next player:", self._next_player)
+                if self._next_player > self._num_players:
+                    self._next_player = 1
+                player = self._ordered_players[self._next_player - 1]
+                if player.hidden:
+                    # print(" skip hidden player")
+                    self._next_player += 1
+                else:
+                    loop = False
+            if self._iteration >= self._active_players - 1:
+                print(" next turn")
+                self._iteration = 0
+                self._turn += 1
+                self._active_players = 0
+                for player in self._ordered_players:
+                    if not player.hidden:
+                        self._active_players += 1
+            else:
+                self._iteration += 1
+        elif Game.PHASE_STATUS == self._phase:
+            self._next_player = self._next_player + 1
+            if self._next_player > self._num_players:
+                self._next_player = 1
+            self._iteration += 1
+            if self._iteration == self._num_players - 1:
+                self._next_player = None
+
+    @property
+    def next_player(self):
+        if Game.PHASE_ACTION == self._phase:
+            if self._next_player is None:
+                return None
+            return self._ordered_players[self._next_player - 1]
+        elif Game.PHASE_STATUS == self._phase:
+            if self._next_player is None:
+                return None
+            return self._players[self._next_player - 1]
+        return None
+        # raise Exception(f"next_player -> not implemented for phase {self._phase}")
 
     def notify(self, key, value):
         if key == "passed":
@@ -577,12 +677,16 @@ class Property:
             print(f"write {path} SKIPPED (unchanged)")
 
     def notify(self, key, value):
-        # it is not very nice to have a specific case...
         if key == "colour":
+            # it is not very nice to have a specific case...
             colour = value
             self._value = colour.id
         else:
             self._value = value
+
+    def reset(self):
+        self._value = self._default
+        self._saved_value = self._default
 
 
 class PropertyInt(Property):
@@ -762,21 +866,24 @@ class Player:
         print("Hide player", self._num)
         self._hidden.value = True
 
-    @property
-    def previous(self):
-        for delta in range(1, self._game.num_players):
-            player = self._game.get_player(self.num - delta)
-            if not player.hidden:
-                return player
-        return self
+    def unhide(self):
+        self._hidden.value = False
 
-    @property
-    def next(self):
-        for delta in range(1, self._game.num_players):
-            player = self._game.get_player(self.num + delta)
-            if not (player.hidden or player.has_passed):
-                return player
-        return self
+    # @property
+    # def previous(self):
+    #     for delta in range(1, self._game.num_players):
+    #         player = self._game.get_player(self.num - delta)
+    #         if not player.hidden:
+    #             return player
+    #     return self
+
+    # @property
+    # def next(self):
+    #     for delta in range(1, self._game.num_players):
+    #         player = self._game.get_player(self.num + delta)
+    #         if not (player.hidden or player.has_passed):
+    #             return player
+    #     return self
 
     def __repr__(self):
         string = f"Player(num={self._num}, name={self._name.value}, "
@@ -830,6 +937,12 @@ class Player:
         self.write_strategy()
         self.write_others()
 
+    def go_to_next_turn(self):
+        self._strategy.reset()
+        self._has_played_strategy.reset()
+        self._has_passed.reset()
+        self._hidden.reset()
+
 
 def main():
     game = Game.build_fake_game(do_print=True)
@@ -838,17 +951,23 @@ def main():
         print(player)
 
     game.start_playing()
-    player = game.get_next_player()
+    game.next()
+    player = game.current_player
     player.strategy = Strategies.WARFARE
-    player = game.get_next_player()
+    game.next()
+    player = game.current_player
     player.strategy = Strategies.TECHNOLOGY
-    player = game.get_next_player()
+    game.next()
+    player = game.current_player
     player.strategy = Strategies.TRADE
-    player = game.get_next_player()
+    game.next()
+    player = game.current_player
     player.strategy = Strategies.LEADERSHIP
-    player = game.get_next_player()
+    game.next()
+    player = game.current_player
     player.strategy = Strategies.CONSTRUCTION
-    player = game.get_next_player()
+    game.next()
+    player = game.current_player
     player.strategy = Strategies.POLITICS
 
     print(repr(game))

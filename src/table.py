@@ -144,6 +144,7 @@ class Titable:
                 assert self._game.current_player.can_pass
                 self._game.current_player.do_pass()
             self._append_event(self._play_event, self._game.current_player.num)
+            self._play_event = None
         phase = self._game.next()
         if logic.Game.PHASE_ACTION == phase:
             self.switch_to_screen_action()
@@ -151,6 +152,8 @@ class Titable:
             self.switch_to_screen_agenda()
         elif logic.Game.PHASE_STATUS == phase:
             self.switch_to_screen_status()
+        elif logic.Game.PHASE_STRATEGY == phase:
+            self.switch_to_screen_startegy()
         else:
             raise Exception("Not implemented")
 
