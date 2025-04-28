@@ -147,6 +147,10 @@ class Titable:
         phase = self._game.next()
         if logic.Game.PHASE_ACTION == phase:
             self.switch_to_screen_action()
+        elif logic.Game.PHASE_AGENDA == phase:
+            self.switch_to_screen_agenda()
+        elif logic.Game.PHASE_STATUS == phase:
+            self.switch_to_screen_status()
         else:
             raise Exception("Not implemented")
 
@@ -160,6 +164,20 @@ class Titable:
         if self._current_screen:
             self._current_screen.hide()
         self._current_screen = screens.ScreenAction(self._lights, self._game)
+        self._current_screen.draw()
+
+    def switch_to_screen_agenda(self):
+        print("switch_to_screen_agenda")
+        if self._current_screen:
+            self._current_screen.hide()
+        self._current_screen = screens.ScreenAgenda(self._lights, self._game)
+        self._current_screen.draw()
+
+    def switch_to_screen_status(self):
+        print("switch_to_screen_status")
+        if self._current_screen:
+            self._current_screen.hide()
+        self._current_screen = screens.ScreenStatus(self._lights, self._game)
         self._current_screen.draw()
 
     def switch_to_screen_menu(self):
@@ -193,8 +211,10 @@ class Titable:
             raise Exception("It is not possible to switch back to STRATEGY_PLAYER")
         elif ScreenTypes.ACTION_PLAYER == return_screen:
             self.switch_to_screen_action()
+        elif ScreenTypes.AGENDA == return_screen:
+            self.switch_to_screen_agenda()
         elif ScreenTypes.STATUS_PLAYER == return_screen:
-            pass
+            self.switch_to_screen_status()
         elif ScreenTypes.MENU == return_screen:
             self.switch_to_screen_menu()
         else:
