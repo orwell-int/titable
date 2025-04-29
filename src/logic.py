@@ -127,22 +127,35 @@ class Game:
         speaker: int = 0,
         current_player: int = 0,
         state: int = STATE_INIT,
-        turn: int = 1,
-        round: int = 1,
         phase: int = PHASE_STRATEGY,
+        round: int = 1,
+        turn: int = 1,
         available_strategies=None,
         players=None,
         available_colours=None,
+        restore: bool = False,
     ):
+        if restore:
+            self.read()
+            self._players = []
+            self._available_colours = set(colours.PLAYER_COLOURS)
+            for _ in range(self._num_players):
+                player = self._add_player()
+                if player.colour != colours.PLAYER_NEUTRAL:
+                    if player.colour in self._available_colours:
+                        self._available_colours.remove(player.colour)
+            if self._phase > Game.PHASE_STRATEGY:
+                self._ordered_players = self.order_players()
+            return
         self._num_players = num_players
         self._speaker = speaker
         self._current_player = current_player
         self._previous_player = None
         self._next_player = None
         self._state = state
-        self._turn = turn
-        self._round = round
         self._phase = phase
+        self._round = round
+        self._turn = turn
         self._iteration = 0  # count inside a turn
         self._player_index_to_hide_next = None
         self._player_index_to_hide_now = None
@@ -168,28 +181,98 @@ class Game:
         if available_colours:
             self._available_colours = available_colours
         else:
-            self._available_colours = set(
-                [
-                    colours.PLAYER_BLACK,
-                    colours.PLAYER_BLUE,
-                    colours.PLAYER_GREEN,
-                    colours.PLAYER_ORANGE,
-                    colours.PLAYER_PINK,
-                    colours.PLAYER_PURPLE,
-                    colours.PLAYER_RED,
-                    colours.PLAYER_YELLOW,
-                ]
-            )
+            self._available_colours = set(colours.PLAYER_COLOURS)
         self._ordered_players = []
+
+    def _to_str_uint(self, value):
+        if value is None:
+            return "-1"
+        else:
+            return str(value)
+
+    def _from_str_uint(self, value):
+        int_value = int(value)
+        if int_value < 0:
+            return None
+        else:
+            return int_value
+
+    def _get_names(self):
+        for item in (
+            "_num_players",
+            "_speaker",
+            "_state",
+            "_phase",
+            "_round",
+            "_turn",
+            "_iteration",
+        ):
+            yield item
+
+    def _get_unames(self):
+        for uitem in (
+            "_current_player",
+            "_previous_player",
+            "_next_player",
+            "_player_index_to_hide_next",
+            "_player_index_to_hide_now",
+        ):
+            yield uitem
+
+    @property
+    def _separator(self):
+        return ", "
+
+    def to_content(self):
+        content = []
+        for name in self._get_names():
+            item = getattr(self, name)
+            content.append(str(item))
+        content.append("u")
+        for uname in self._get_unames():
+            uitem = getattr(self, uname)
+            content.append(self._to_str_uint(uitem))
+        content.append("s")
+        for strategy in Strategies.ALL:
+            goods = self._available_strategies[strategy]
+            content.append(str(goods))
+
+        return self._separator.join(content)
+
+    def from_content(self, iter_content):
+        iter_content = iter_content.split(self._separator).__iter__()
+        for name, value in zip(self._get_names(), iter_content):
+            setattr(self, name, int(value))
+        u = next(iter_content)
+        assert u == "u"
+        for uname, value in zip(self._get_unames(), iter_content):
+            setattr(self, uname, self._from_str_uint(value))
+        s = next(iter_content)
+        assert s == "s"
+        self._available_strategies = {}
+        for strategy, str_goods in zip(Strategies.ALL, iter_content):
+            self._available_strategies[strategy] = int(str_goods)
+
+    def _get_path(self):
+        return f"titable/game"
+
+    def write(self, also_write_players=False):
+        open(self._get_path(), "w").write(self.to_content())
+        if also_write_players:
+            for player in self._players:
+                player.write()
+
+    def read(self):
+        self.from_content(open(self._get_path(), "r").read())
 
     def _add_player(self):
         num = len(self._players) + 1
-        if num > 6:
-            print("Too many players")
-            return None
+        if num > self._num_players:
+            raise Exception("Too many players")
         player = Player(self, num)
         player.add_observer_passed(self)
         self._players.append(player)
+        return player
 
     def get_player(self, num: int):
         index = (num - 1) % self._num_players
@@ -211,7 +294,7 @@ class Game:
         if colour not in self._available_colours:
             raise Exception(f"Colour {colour}, not available")
         self._available_colours.remove(colour)
-        if former_colour:
+        if former_colour and former_colour != colours.PLAYER_BLANK:
             self._available_colours.add(former_colour)
 
     @property
@@ -331,7 +414,6 @@ class Game:
     def _start_phase_strategy(self):
         self._previous_player = None
         self._ordered_players = []
-        self._turn += 1
         self._phase = Game.PHASE_STRATEGY
         for strategy in set(Strategies.ALL) - set(self._available_strategies.keys()):
             self._available_strategies[strategy] = 0
@@ -344,6 +426,8 @@ class Game:
         print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
 
     def _start_phase_action(self):
+        self._phase = Game.PHASE_ACTION
+        self._turn = 1
         self._iteration = 0
         self._current_player = 1
         self._next_player = 2
@@ -354,6 +438,7 @@ class Game:
 
     def _end_phase_action(self):
         print("_end_phase_action")
+        self._phase = Game.PHASE_AGENDA
         self._iteration = 0
         self._ordered_players = []
         for player in self._players:
@@ -392,12 +477,10 @@ class Game:
         if Game.PHASE_STRATEGY == self._phase:
             if self.players_have_strategy:
                 self._end_phase_strategy()
-                self._phase = Game.PHASE_ACTION
                 self._start_phase_action()
         elif Game.PHASE_ACTION == self._phase:
             if self.players_have_passed:
                 self._end_phase_action()
-                self._phase = Game.PHASE_AGENDA
             else:
                 self._previous_player = self._current_player
                 self._hide_player()
@@ -411,8 +494,8 @@ class Game:
             # skip status phase for now
             skip_status_phase = True
             if skip_status_phase:
-                self._end_phase_status()
-                self._phase = Game.PHASE_STRATEGY
+                self._start_phase_strategy()
+                # self._phase = Game.PHASE_STRATEGY
                 self._next_round()
             else:
                 self._phase = Game.PHASE_STATUS
@@ -492,8 +575,8 @@ class Game:
     def _compute_next_player(self):
         # print(f"_compute_next_player R {self._round} T {self._turn} I {self._iteration}")
         if Game.PHASE_ACTION == self._phase:
+            assert self._next_player is not None
             self._next_player = self._next_player + 1
-            next_turn = False
             loop = True
             while loop:
                 # print(f" % next player:", self._next_player)
@@ -516,6 +599,7 @@ class Game:
             else:
                 self._iteration += 1
         elif Game.PHASE_STATUS == self._phase:
+            assert self._next_player is not None
             self._next_player = self._next_player + 1
             if self._next_player > self._num_players:
                 self._next_player = 1
@@ -552,8 +636,14 @@ class Game:
 
     def __repr__(self):
         string = f"Game(num_players={self._num_players}, speaker={self._speaker}, "
-        string += f"current_player={self._current_player}, state={self._state}, "
-        string += f"turn={self._turn}, round={self._round}, phase={self._phase}, "
+        string += f"current_player={self._current_player}, "
+        string += f"previous_player={self._previous_player}, "
+        string += f"next_player={self._next_player}, "
+        string += f"player_index_to_hide_next={self._player_index_to_hide_next}, "
+        string += f"player_index_to_hide_now={self._player_index_to_hide_now}, "
+        string += f"state={self._state}, "
+        string += f"phase={self._phase}, round={self._round}, turn={self._turn}, "
+        string += f"iteration={self._iteration}, "
         string += f"available_strategies={self._available_strategies}, "
         string += f"players={self._players}, "
         string += f"available_colours={self._available_colours})"
@@ -945,38 +1035,64 @@ class Player:
 
 
 def main():
-    game = Game.build_fake_game(do_print=True)
+    # not compatible with device!
+    import sys
+    import file_mock
 
-    for player in game._players:
-        print(player)
+    select = 1
+    if len(sys.argv) > 1:
+        try:
+            param = int(sys.argv[1])
+            if 0 < param <= 2:
+                select = param
+        except:
+            pass
 
-    game.start_playing()
-    game.next()
-    player = game.current_player
-    player.strategy = Strategies.WARFARE
-    game.next()
-    player = game.current_player
-    player.strategy = Strategies.TECHNOLOGY
-    game.next()
-    player = game.current_player
-    player.strategy = Strategies.TRADE
-    game.next()
-    player = game.current_player
-    player.strategy = Strategies.LEADERSHIP
-    game.next()
-    player = game.current_player
-    player.strategy = Strategies.CONSTRUCTION
-    game.next()
-    player = game.current_player
-    player.strategy = Strategies.POLITICS
+    if 1 == select:
+        game = Game.build_fake_game(do_print=True)
 
-    print(repr(game))
+        for player in game._players:
+            print(player)
 
-    game._end_phase_strategy()
+        game.start_playing()
+        game.next()
+        player = game.current_player
+        player.strategy = Strategies.WARFARE
+        game.next()
+        player = game.current_player
+        player.strategy = Strategies.TECHNOLOGY
+        game.next()
+        player = game.current_player
+        player.strategy = Strategies.TRADE
+        game.next()
+        player = game.current_player
+        player.strategy = Strategies.LEADERSHIP
+        game.next()
+        player = game.current_player
+        player.strategy = Strategies.CONSTRUCTION
+        game.next()
+        player = game.current_player
+        player.strategy = Strategies.POLITICS
 
-    for player in game._ordered_players:
-        print(player)
-    pass
+        print(repr(game))
+
+        game._end_phase_strategy()
+
+        for player in game._ordered_players:
+            print(player)
+    elif 2 == select:
+        with file_mock.do():
+            game = Game.build_fake_game(do_print=True)
+            print(repr(game))
+            print("** Write **")
+            game.write(also_write_players=True)
+
+            print(repr(game))
+            print("** Restore **")
+            other_game = Game(restore=True)
+
+            print(repr(game))
+            print(repr(other_game))
 
 
 if "__main__" == __name__:
