@@ -21,8 +21,8 @@ class Point:
 
 
 class Titable:
-    def __init__(self, leds_only_print=False):
-        self._game = logic.Game()
+    def __init__(self, leds_only_print=False, num_players: int=6):
+        self._game = logic.Game(num_players)
         self._screens = {}
         self._current_screen = None
         self._saved_screen = None
@@ -252,7 +252,7 @@ class Titable:
 
 
 def inner_main():
-    titable = Titable(leds_only_print=True)
+    titable = Titable(leds_only_print=True, num_players=5)
     if not device.is_micropython():
         M5.TITABLE = titable
     auto_touch = False
