@@ -265,7 +265,8 @@ class Screen:
             if self._side_colour in colours.PLAYER_COLOURS:
                 self._lights.turn_on(self._side_colour)
             else:
-                self._lights.turn_off()
+                self._lights.turn_on(colours.PLAYER_NEUTRAL)
+                # self._lights.turn_off()
 
     def update(self):
         if self._text_round:
@@ -276,7 +277,8 @@ class Screen:
             if self._side_colour in colours.PLAYER_COLOURS:
                 self._lights.turn_on(self._side_colour)
             else:
-                self._lights.turn_off()
+                # self._lights.turn_off()
+                self._lights.turn_on(colours.PLAYER_NEUTRAL)
 
     def do_event(self, sender, event, args):
         pass
