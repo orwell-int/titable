@@ -132,7 +132,7 @@ class Titable:
         self._current_screen.draw()
 
     def next(self):
-        print("next...")
+        print("Table.next...")
         if self._play_event:
             if events.PLAY_STRATEGY == self._play_event:
                 self._game.current_player.use_strategy()
@@ -160,6 +160,7 @@ class Titable:
     def previous(self, phase):
         print(f"previous({phase})...")
         if logic.Game.PHASE_STRATEGY == phase:
+            self._game.previous()
             self.switch_to_screen_startegy()
 
     def switch_to_screen_action(self):

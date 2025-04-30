@@ -1090,11 +1090,12 @@ class ScreenAction(Screen):
         if not player_next:
             raise Exception("No next player!")
 
-        text_previous = "previous"
         if player_previous:
             colour = player_previous.colour
+            text_previous = "previous"
         else:
             colour = colours.PALETTE_LIGHT_GREEN
+            text_previous = "Strategy"
         self._button_previous = blocks.ButtonRectangle(
             LEFT_BAR_WIDTH,
             TITLE_HEIGHT,
@@ -1111,7 +1112,6 @@ class ScreenAction(Screen):
             self._button_previous.add_more_text(player_previous.name)
             self._button_previous.args = {"phase": logic.Game.PHASE_ACTION}
         else:
-            self._button_previous.add_more_text("strategy")
             self._button_previous.add_more_text("phase")
             self._button_previous.args = {"phase": logic.Game.PHASE_STRATEGY}
 

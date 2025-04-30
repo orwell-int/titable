@@ -6,6 +6,7 @@ import device
 
 
 USE_UNICODE = False
+SKIP_STATUS_PHASE = True
 
 
 class Strategies:
@@ -335,6 +336,11 @@ class Game:
     def _next_turn(self):
         self._turn += 1
 
+    def _previous_turn(self):
+        self._turn -= 1
+        if self._turn < 1:
+            raise Exception("Invalid value for turn:", self._turn)
+
     @property
     def iteration(self):
         return self._iteration
@@ -454,6 +460,9 @@ class Game:
     def _end_phase_status(self):
         self._iteration = 0
 
+    def _start_phase_agenda(self):
+        pass
+
     def _end_phase_agenda(self):
         pass
 
@@ -472,8 +481,32 @@ class Game:
         n = self.next_player.num if self.next_player else "x"
         print(f"{text} p | c | n : {p} | {c} | {n}")
 
+    def previous(self):
+        print("Game.previous")
+        print("phase:", self._phase)
+        if Game.PHASE_STRATEGY == self._phase:
+            raise Exception("Not possible?")
+        elif Game.PHASE_ACTION == self._phase:
+            if self._turn == 1 and self._iteration == 0:
+                self._start_phase_strategy()
+            else:
+                self._iteration -= 1
+                if self._iteration < 0:
+                    print("???")
+                    self._iteration = -999
+                    self._previous_turn()
+        elif Game.PHASE_AGENDA == self._phase:
+            self._start_phase_action()
+        elif Game.PHASE_STATUS == self._phase:
+            if self._iteration == 0:
+                self._start_phase_agenda()
+            else:
+                self._iteration -= 1
+        return self._phase
+
     def next(self):
-        self.print_player_nums("next")
+        self.print_player_nums("Game.next")
+        print("phase:", self._phase)
         if Game.PHASE_STRATEGY == self._phase:
             if self.players_have_strategy:
                 self._end_phase_strategy()
@@ -492,8 +525,7 @@ class Game:
         elif Game.PHASE_AGENDA == self._phase:
             self._end_phase_agenda()
             # skip status phase for now
-            skip_status_phase = True
-            if skip_status_phase:
+            if SKIP_STATUS_PHASE:
                 self._start_phase_strategy()
                 # self._phase = Game.PHASE_STRATEGY
                 self._next_round()
@@ -591,7 +623,7 @@ class Game:
             if self._iteration >= self._active_players - 1:
                 print(" next turn")
                 self._iteration = 0
-                self._turn += 1
+                self._next_turn()
                 self._active_players = 0
                 for player in self._ordered_players:
                     if not player.hidden:
