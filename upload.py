@@ -89,7 +89,7 @@ def main():
     hashes = get_remote_hashes(port, args.baud)
     print(hashes)
     for file in sources.glob("*.py"):
-        if file in ("file_mock.py",) or file.startswith("test_"):
+        if file in ("file_mock.py",) or file.name.startswith("test_"):
             continue
         print(file)
         do_upload = True
