@@ -260,12 +260,15 @@ class Game:
             self._available_strategies[strategy] = int(str_goods)
 
     def to_map(self):
+        print("Game.to_map")
         content = {}
         for name in self._get_names():
             item = getattr(self, name)
+            # print(f"{name} ->", item)
             content[name] = item
         for uname in self._get_unames():
             uitem = getattr(self, uname)
+            # print(f"{uname} ->", uitem)
             content[uname] = uitem
         for strategy in Strategies.ALL:
             goods = self._available_strategies[strategy]
@@ -276,9 +279,11 @@ class Game:
         print("Game.from_map")
         for name in self._get_names():
             value = content[name]
+            # print(f"{name} ->", value)
             setattr(self, name, value)
         for uname in self._get_unames():
             value = content[uname]
+            # print(f"{uname} ->", value)
             setattr(self, uname, value)
         for strategy in Strategies.ALL:
             goods = content[strategy]
@@ -571,6 +576,7 @@ class Game:
     def next(self):
         self.print_player_nums("Game.next")
         self.write()
+        self._player_index_used_strategy = None
         print("phase:", self._phase)
         if Game.PHASE_STRATEGY == self._phase:
             if self.players_have_strategy:
@@ -685,8 +691,8 @@ class Game:
                 if self._next_player > self._num_players:
                     self._next_player = 1
                 player = self._ordered_players[self._next_player - 1]
-                if player.hidden:
-                    # print(" skip hidden player")
+                if player.has_passed:
+                    print(" skip player that has passed")
                     self._next_player += 1
                 else:
                     loop = False

@@ -1570,7 +1570,7 @@ class ScreenNumPlayer(Screen):
                 y = TITLE_HEIGHT + (button_sy - 1) * line
                 sx = MAX_X - x if (last_column) else button_sx
                 sy = MAX_Y - y if (last_line) else button_sy
-                if index < max_num_players:
+                if 4 <= index < max_num_players:
                     num = index + 1
                     button = blocks.ButtonRectangle(
                         x,
