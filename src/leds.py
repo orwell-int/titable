@@ -72,7 +72,11 @@ class Lights:
         if self._only_print:
             print(f"{url} -> {data_str}")
         else:
-            requests2.post(url, json=data)
+            try:
+                requests2.post(url, json=data)
+            except Exception as ex:
+                print("Could not make call to", url)
+                print(ex)
 
     def _send_command(self, r: int, g: int, b: int, state: str, brightness: int):
         data = {

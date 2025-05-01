@@ -21,18 +21,28 @@ class Point:
 
 
 class Titable:
-    def __init__(self, leds_only_print=False, num_players: int=6):
-        self._game = logic.Game(num_players)
+    def __init__(self, leds_only_print=False, num_players: int = 6):
+        if num_players == 0:
+            path = "titable/num_players"
+            if device.file_exists_and_not_empty(path):
+                num_players = int(open(path, "r").read())
+        if num_players != 0:
+            self._game = logic.Game(num_players)
+        else:
+            self._game = None
         self._screens = {}
         self._current_screen = None
         self._saved_screen = None
         self._lights = leds.Lights(only_print=leds_only_print)
         self._play_event = None
-        self.switch_to_screen_welcome()
+        if num_players != 0:
+            self.switch_to_screen_welcome()
+        else:
+            self.switch_to_screen_num_players()
         events.HANDLER.register(events.ALL, self)
         self._touched = False
         self._num_events = 0
-        self._history = []
+        # self._history = []
 
     def do_event(self, sender, event: int, args):
         if events.RETURN == event:
@@ -55,7 +65,7 @@ class Titable:
             pass
         elif events.STRATEGY_PLAYER == event:
             player = args["player"]
-            self.switch_to_screen_startegy_player(player)
+            self.switch_to_screen_strategy_player(player)
         elif events.PICK_STRATEGY == event:
             pass
         elif events.SETUP_NAME == event:
@@ -63,6 +73,7 @@ class Titable:
         elif events.NEXT == event:
             self.next()
         elif events.PREVIOUS == event:
+            self._play_event = None
             phase = args["phase"]
             self.previous(phase)
         elif events.PLAY_STRATEGY == event:
@@ -87,6 +98,11 @@ class Titable:
                 print("Unable to save current screen (None)")
         elif events.UNSAVE_SCREEN == event:
             self._saved_screen = None
+        elif events.SELECT_NUM_PLAYERS == event:
+            num_players = args["num_players"]
+            device.create_file("titable/num_players", str(num_players))
+            self._game = logic.Game(num_players)
+            self.switch_to_screen_welcome()
 
     def touch(self, x: int, y: int):
         if (x is None) or (y is None):
@@ -98,6 +114,13 @@ class Titable:
         self._touched = True
         assert self._current_screen is not None
         self._current_screen.touch(x, y)
+
+    def switch_to_screen_num_players(self):
+        print("switch_to_screen_num_players")
+        if self._current_screen:
+            self._current_screen.hide()
+        self._current_screen = screens.ScreenNumPlayer(self._lights)
+        self._current_screen.draw()
 
     def switch_to_screen_welcome(self):
         print("switch_to_screen_welcome")
@@ -111,18 +134,24 @@ class Titable:
         self._game.start_playing()
         phase = self._game.phase
         if logic.Game.PHASE_STRATEGY == phase:
-            self.switch_to_screen_startegy()
+            self.switch_to_screen_strategy()
+        elif logic.Game.PHASE_ACTION == phase:
+            self.switch_to_screen_action()
+        elif logic.Game.PHASE_AGENDA == phase:
+            self.switch_to_screen_agenda()
+        elif logic.Game.PHASE_STATUS == phase:
+            self.switch_to_screen_status()
         else:
             raise Exception(f"Not implemented yet (resume_play from phase {phase} )")
 
-    def switch_to_screen_startegy(self):
+    def switch_to_screen_strategy(self):
         print("switch_to_screen_strategy")
         if self._current_screen:
             self._current_screen.hide()
         self._current_screen = screens.ScreenStrategy(self._lights, self._game)
         self._current_screen.draw()
 
-    def switch_to_screen_startegy_player(self, player):
+    def switch_to_screen_strategy_player(self, player):
         print("switch_to_screen_strategy_player")
         if self._current_screen:
             self._current_screen.hide()
@@ -143,7 +172,7 @@ class Titable:
             elif events.PLAY_PASS == self._play_event:
                 assert self._game.current_player.can_pass
                 self._game.current_player.do_pass()
-            self._append_event(self._play_event, self._game.current_player.num)
+            # self._append_event(self._play_event, self._game.current_player.num)
             self._play_event = None
         phase = self._game.next()
         if logic.Game.PHASE_ACTION == phase:
@@ -153,15 +182,20 @@ class Titable:
         elif logic.Game.PHASE_STATUS == phase:
             self.switch_to_screen_status()
         elif logic.Game.PHASE_STRATEGY == phase:
-            self.switch_to_screen_startegy()
+            self.switch_to_screen_strategy()
         else:
             raise Exception("Not implemented")
 
     def previous(self, phase):
-        print(f"previous({phase})...")
+        print(f"Table.previous({phase})...")
         if logic.Game.PHASE_STRATEGY == phase:
             self._game.previous()
-            self.switch_to_screen_startegy()
+            self.switch_to_screen_strategy()
+        elif logic.Game.PHASE_ACTION == phase:
+            self._game.previous()
+            self.switch_to_screen_action()
+        else:
+            print(f"Phase not handled {phase}")
 
     def switch_to_screen_action(self):
         print("switch_to_screen_action")
@@ -210,7 +244,7 @@ class Titable:
         elif ScreenTypes.SETUP_PLAYER_COLOUR == return_screen:
             raise Exception("It is not possible to switch back to SETUP_PLAYER_COLOUR")
         elif ScreenTypes.STRATEGY_MAIN == return_screen:
-            self.switch_to_screen_startegy()
+            self.switch_to_screen_strategy()
         elif ScreenTypes.STRATEGY_PLAYER == return_screen:
             raise Exception("It is not possible to switch back to STRATEGY_PLAYER")
         elif ScreenTypes.ACTION_PLAYER == return_screen:
@@ -240,19 +274,19 @@ class Titable:
         )
         self._current_screen.draw()
 
-    def _append_event(self, event, player_num=None):
-        self._num_events += 1
-        parts = (self._game.round, self._game.turn, self._game.iteration, event)
-        self._history.append(Point(self._num_events, *parts, player_num))
-        path = "titable/events/" + str(self._num_events)
-        content = [str(x) for x in parts]
-        if player_num:
-            content.append(str(player_num))
-        device.create_file(path, "\n".join(content))
+    # def _append_event(self, event, player_num=None):
+    #     self._num_events += 1
+    #     parts = (self._game.round, self._game.turn, self._game.iteration, event)
+    #     self._history.append(Point(self._num_events, *parts, player_num))
+    #     path = "titable/events/" + str(self._num_events)
+    #     content = [str(x) for x in parts]
+    #     if player_num:
+    #         content.append(str(player_num))
+    #     device.create_file(path, "\n".join(content))
 
 
 def inner_main():
-    titable = Titable(leds_only_print=True, num_players=5)
+    titable = Titable(leds_only_print=True, num_players=0)
     if not device.is_micropython():
         M5.TITABLE = titable
     auto_touch = False

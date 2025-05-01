@@ -1,6 +1,7 @@
 import platform
 import time
 import os
+import errno
 
 
 def is_micropython():
@@ -32,6 +33,13 @@ if is_micropython():
         except OSError:
             return False
 
+    def is_dir(filename: str):
+        try:
+            stat = os.stat(filename)
+            return (stat[0] & 0x4000) != 0
+        except OSError:
+            return False
+
 else:
 
     def get_timeref_ms():
@@ -46,13 +54,16 @@ else:
     def is_file(filename: str):
         return os.path.isfile(filename)
 
+    def is_dir(filename: str):
+        return os.path.isdir(filename)
+
 
 def create_dir(path: str):
     create_dirs(path.split("/"))
 
 
 def create_dirs(paths: list[str]):
-    print(f"create_dirs({paths})")
+    # print(f"create_dirs({paths})")
     full_path = ""
     has_empty = False
     first_non_empty = True
@@ -81,10 +92,13 @@ def create_file(filename: str, content: str):
 def remove_in(folder):
     for file in os.listdir(folder):
         full_filename = f"{folder}/{file}"
-        if 0x4000 == os.stat(full_filename):
+        if is_dir(full_filename):
             remove_in(full_filename)
         else:
-            os.remove(full_filename)
+            try:
+                os.remove(full_filename)
+            except Exception as ex:
+                print(ex)
 
 
 def main():

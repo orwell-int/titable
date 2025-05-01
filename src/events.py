@@ -25,6 +25,7 @@ NEXT_TURN = 61
 WELCOME = 99
 SAVE_SCREEN = 100
 UNSAVE_SCREEN = 101
+SELECT_NUM_PLAYERS = 999
 
 ALL_EVENTS = [
     RETURN,
@@ -53,6 +54,7 @@ ALL_EVENTS = [
     WELCOME,
     SAVE_SCREEN,
     UNSAVE_SCREEN,
+    SELECT_NUM_PLAYERS,
 ]
 
 
@@ -158,5 +160,7 @@ def to_string(event: int):
         return "SAVE_SCREEN"
     elif UNSAVE_SCREEN == event:
         return "UNSAVE_SCREEN"
+    elif SELECT_NUM_PLAYERS == event:
+        return "SELECT_NUM_PLAYERS"
     else:
         return "OOPS"

@@ -1,4 +1,5 @@
 import os, sys, io
+import time
 import M5
 from M5 import *
 import table
@@ -17,7 +18,11 @@ def setup():
         Speaker.setVolume(15)
     else:
         leds_only_print = True
-    TITABLE = table.Titable(leds_only_print)
+    TITABLE = table.Titable(leds_only_print, num_players=0)
+    if M5.Touch.getCount():
+        time.sleep(1)
+    if M5.Touch.getCount():
+        time.sleep(1)
 
 
 def loop():

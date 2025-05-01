@@ -9,7 +9,6 @@ import serial.tools.list_ports
 from pathlib import Path
 
 
-
 def upload(port, baud, source, destination):
     args = [
         "ampy",

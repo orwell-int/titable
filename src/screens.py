@@ -46,6 +46,8 @@ class ScreenTypes:
     MENU = 10
     # Screen opened before the menu
     SAVED_SCREEN = 11
+    # Select the number of players
+    NUM_PLAYERS = 99
 
 
 MAX_X = 320
@@ -137,12 +139,12 @@ class Screen:
         self._screen_type = screen_type
         self.name = name
         self.title = title
+        if side_colour is None:
+            side_colour = colours.PALETTE_DARK_GREEN
         if title_colour is not None:
             self.title_colour = title_colour
         else:
             self.title_colour = side_colour.get_contrasting_text()
-        if side_colour is None:
-            side_colour = colours.PALETTE_DARK_GREEN
         self._side_colour = side_colour
         self._game = game
         self._hidden = True
@@ -1285,6 +1287,7 @@ class ScreenAgenda(Screen):
             inset=2,
         )
         self._button_previous.action = DelaySendEvent(events.PREVIOUS)
+        self._button_previous.args = {"phase": logic.Game.PHASE_ACTION}
         self._button_previous.add_more_text("phase")
 
         text_next = "Status"
@@ -1522,6 +1525,90 @@ class ScreenMenu(Screen):
         self._button_reset_round.draw()
 
 
+class ScreenNumPlayer(Screen):
+    def __init__(
+        self,
+        lights: leds.Lights,
+    ):
+        super().__init__(
+            lights,
+            ScreenTypes.NUM_PLAYERS,
+            "num players",
+            "How many players?",
+            title_colour=None,
+            side_colour=None,
+            game=None,
+            has_round=False,
+            has_turn=False,
+            has_return=False,
+        )
+        button_font = Widgets.FONTS.DejaVu18
+        dy = 4
+        top_button_sy = TITLE_HEIGHT - dy * 2
+        top_button_sx = 180
+        delta_x = (MAX_X - LEFT_BAR_WIDTH - top_button_sx) // 2
+        self._buttons, self._rectangles = self._create_grid_numbers(
+            button_font, events.SELECT_NUM_PLAYERS
+        )
+        self._touchables.extend(self._buttons)
+        self.update()
+
+    def _create_grid_numbers(self, button_font, event):
+        num_columns = 2
+        num_lines = 3
+        button_sx = (INNER_X + 2) // num_columns
+        button_sy = (INNER_Y + 2) // num_lines
+        max_num_players = 6
+        buttons = []
+        rectangles = []
+        for line in range(num_lines):
+            last_line = line == (num_lines - 1)
+            for column in range(num_columns):
+                last_column = column == (num_columns - 1)
+                index = column + line * num_columns
+                x = LEFT_BAR_WIDTH + (button_sx - 1) * column
+                y = TITLE_HEIGHT + (button_sy - 1) * line
+                sx = MAX_X - x if (last_column) else button_sx
+                sy = MAX_Y - y if (last_line) else button_sy
+                if index < max_num_players:
+                    num = index + 1
+                    button = blocks.ButtonRectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        str(num),
+                        colours.STRATEGY_COLOURS[index],
+                        Screen.COLOUR_BORDER,
+                        button_font,
+                    )
+                    button.args = {"num_players": num}
+                    button.action = DelaySendEvent(event)
+                    buttons.append(button)
+                else:
+                    rectangle = blocks.Rectangle(
+                        x,
+                        y,
+                        sx,
+                        sy,
+                        None,
+                        colours.WHITE,
+                        Screen.COLOUR_BORDER,
+                    )
+                    rectangles.append(rectangle)
+        return (buttons, rectangles)
+
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+        for button in self._buttons:
+            button.draw()
+        for rectangle in self._rectangles:
+            rectangle.draw()
+
+
 def main(select=None):
     import sys
     import M5
@@ -1535,7 +1622,7 @@ def main(select=None):
         if len(sys.argv) > 1:
             try:
                 param = int(sys.argv[1])
-                if 0 < param <= 17:
+                if 0 < param <= 18:
                     select = param
             except:
                 pass
@@ -1636,6 +1723,9 @@ def main(select=None):
     elif 17 == select:
         game = logic.Game.build_fake_game()
         screen_menu = ScreenAgenda(lights, game)
+        screen_menu.draw()
+    elif 18 == select:
+        screen_menu = ScreenNumPlayer(lights)
         screen_menu.draw()
     if not device.is_micropython():
         while True:
