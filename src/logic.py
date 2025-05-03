@@ -603,8 +603,8 @@ class Game:
                 players_to_write.add(player)
         for player in players_to_write:
             player.write()
-        print("ordered players (previous):")
-        print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
+        # print("ordered players (previous):")
+        # print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
         return self._phase
 
     def next(self, play_event=None):
@@ -663,32 +663,9 @@ class Game:
         self._player_index_used_strategy = None
         self._player_index_passed = None
         self._player_index_hidden = None
-        print("ordered players (next):")
-        print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
+        # print("ordered players (next):")
+        # print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
         return self._phase
-
-    # def get_next_player(self) -> "Player":
-    #     if Game.STATE_PLAY != self._state:
-    #         raise Exception("Cannot only get next player in play state")
-    #     if Game.PHASE_STRATEGY == self._phase:
-    #         player = None
-    #         if 0 == self._speaker:
-    #             raise Exception("Missing speaker")
-    #         if 0 == self._current_player:
-    #             self._current_player = self._speaker
-    #             player = self.get_player(self._current_player)
-    #         else:
-    #             for delta in range(self._num_players):
-    #                 new_num = (self._current_player + delta) % 6 + 1
-    #                 player = self.get_player(new_num)
-    #                 if player.can_play:
-    #                     self._current_player = new_num
-    #                     break
-    #         if player is None:
-    #             raise Exception("Bug: no player found in get_next_player")
-    #         return player
-    #     elif Game.PHASE_ACTION == self._phase:
-    #         raise Exception("Not implemented yet!")
 
     @property
     def current_player(self):
@@ -915,7 +892,7 @@ class Property:
                 print(f"Invalid file {self._name}, ignore")
         else:
             self._value = self._default
-            print(f"File does not exist: {path}")
+            # print(f"File does not exist: {path}")
 
     def write(self):
         if self._game:
@@ -927,15 +904,17 @@ class Property:
             if self._value == self._default or self._value == None:
                 if device.file_exists_and_not_empty(path):
                     os.remove(path)
-                    print(f"erase {path}")
+                    # print(f"erase {path}")
                 else:
-                    print(f"write {path} SKIPPED (empty)")
+                    # print(f"write {path} SKIPPED (empty)")
+                    pass
             else:
-                print(f"write {path}: {self._value}")
+                # print(f"write {path}: {self._value}")
                 device.create_file(path, str(self._value))
             self._saved_value = self._value
         else:
-            print(f"write {path} SKIPPED (unchanged)")
+            # print(f"write {path} SKIPPED (unchanged)")
+            pass
 
     def notify(self, key, value):
         if key == "colour":
@@ -1267,6 +1246,7 @@ def main():
 
             print(repr(game))
             print(repr(other_game))
+            assert repr(game) == repr(other_game)
 
 
 if "__main__" == __name__:
