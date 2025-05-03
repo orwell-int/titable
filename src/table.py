@@ -142,7 +142,7 @@ class Titable:
         elif logic.Game.PHASE_STATUS == phase:
             self.switch_to_screen_status()
         else:
-            raise Exception(f"Not implemented yet (resume_play from phase {phase} )")
+            raise Exception(f"Not implemented yet (resume_play from phase {phase})")
 
     def switch_to_screen_strategy(self):
         print("switch_to_screen_strategy")
@@ -161,20 +161,9 @@ class Titable:
         self._current_screen.draw()
 
     def next(self):
-        print("Table.next...")
-        if self._play_event:
-            if events.PLAY_STRATEGY == self._play_event:
-                self._game.current_player.use_strategy()
-            elif events.PLAY_TACTICAL_OR_COMPONENT == self._play_event:
-                pass
-            elif events.PLAY_SKIP == self._play_event:
-                pass
-            elif events.PLAY_PASS == self._play_event:
-                assert self._game.current_player.can_pass
-                self._game.current_player.do_pass()
-            # self._append_event(self._play_event, self._game.current_player.num)
-            self._play_event = None
-        phase = self._game.next()
+        print("Table.next... with phase:", self._game.phase)
+        phase = self._game.next(self._play_event)
+        self._play_event = None
         if logic.Game.PHASE_ACTION == phase:
             self.switch_to_screen_action()
         elif logic.Game.PHASE_AGENDA == phase:
@@ -310,13 +299,119 @@ def main():
         import file_mock
         import colours
 
+        force_file_mock = False
+        if force_file_mock:
+            # This was copied from the command line after
+            # setting PRINT_DATA to True in file_mock
+            # (and reformatted)
+            file_mock.CONTENT = {
+                "titable/player_1_colour": "0",
+                "titable/1/player_1_strategy": "1",
+                "titable/player_2_colour": "1",
+                "titable/1/player_2_strategy": "2",
+                "titable/player_3_colour": "2",
+                "titable/1/player_3_strategy": "3",
+                "titable/player_4_colour": "3",
+                "titable/1/player_4_strategy": "4",
+                "titable/player_5_colour": "4",
+                "titable/1/player_5_strategy": "5",
+                "titable/player_6_colour": "5",
+                "titable/1/player_6_strategy": "6",
+                "titable/url": "http://lights",
+                "titable/lights": '{"g_p": 100, "b": {}}',
+                "titable/num_players": "5",
+                "titable/game_ds_2": '{"_state": 1, "_phase": 2, "_current_player": 1, "_next_player": 2, "6": 1, "7": 1, "8": 1}',
+                "titable/game_stack": "15",
+                "titable/game": "5, 0, 1, 2, 2, 1, 1, u, 2, 1, 3, -1, -1, 0, s, 1, 1, 1, 0, 0, 0, 0, 0",
+                "titable/game_ds_3": '{"_iteration": 1, "_current_player": 2, "_previous_player": 1, "_next_player": 3, "_player_index_used_strategy": 0}',
+                "titable/1/player_1_has_played_strategy": "True",
+                "titable/game_ds_4": '{"_iteration": 2, "_current_player": 3, "_previous_player": 2, "_next_player": 4, "_player_index_used_strategy": 1}',
+                "titable/1/player_2_has_played_strategy": "True",
+                "titable/game_ds_5": '{"_iteration": 3, "_current_player": 4, "_previous_player": 3, "_next_player": 5, "_player_index_used_strategy": 2}',
+                "titable/1/player_3_has_played_strategy": "True",
+                "titable/game_ds_6": '{"_iteration": 4, "_current_player": 5, "_previous_player": 4, "_next_player": 1, "_player_index_used_strategy": 3}',
+                "titable/1/player_4_has_played_strategy": "True",
+                "titable/game_ds_7": '{"_turn": 2, "_iteration": 0, "_current_player": 1, "_previous_player": 5, "_next_player": 2, "_player_index_used_strategy": 4}',
+                "titable/1/player_5_has_played_strategy": "True",
+                "titable/game_ds_8": '{"_iteration": 1, "_current_player": 2, "_previous_player": 1, "_next_player": 3, "_player_index_passed": 0, "_player_index_used_strategy": null}',
+                "titable/1/player_1_has_passed": "True",
+                "titable/game_ds_9": '{"_iteration": 2, "_current_player": 3, "_previous_player": 2, "_next_player": 4, "_player_index_passed": 1, "_player_index_hidden": 0}',
+                "titable/1/player_2_has_passed": "True",
+                "titable/game_ds_10": '{"_iteration": 3, "_current_player": 4, "_previous_player": 3, "_next_player": 5, "_player_index_passed": 2, "_player_index_hidden": 1}',
+                "titable/1/player_3_has_passed": "True",
+                "titable/game_ds_11": '{"_iteration": 4, "_current_player": 5, "_previous_player": 4, "_player_index_passed": 3, "_player_index_hidden": 2}',
+                "titable/1/player_4_has_passed": "True",
+                "titable/game_ds_12": '{"_phase": 4, "_turn": 0, "_iteration": 0, "_player_index_passed": null, "_player_index_hidden": null}',
+                "titable/1/player_5_has_passed": "True",
+                "titable/game_ds_13": '{"_phase": 1, "_round": 2, "_turn": 1, "_previous_player": null}',
+                "titable/2/player_1_strategy": "8",
+                "titable/2/player_2_strategy": "7",
+                "titable/2/player_3_strategy": "6",
+                "titable/2/player_4_strategy": "5",
+                "titable/2/player_5_strategy": "4",
+                "titable/game_ds_14": '{"_phase": 2, "_current_player": 1, "_next_player": 2, "1": 1, "2": 1, "3": 1, "6": 0, "7": 0, "8": 0}',
+                "titable/game_ds_15": '{"_iteration": 1, "_current_player": 2, "_previous_player": 1, "_next_player": 3, "_player_index_used_strategy": 0}',
+                "titable/2/player_5_has_played_strategy": "True",
+            }
+            file_mock.STATS = {
+                "titable/player_1_colour": 32768,
+                "titable/1/player_1_strategy": 32768,
+                "titable/player_2_colour": 32768,
+                "titable/1/player_2_strategy": 32768,
+                "titable/player_3_colour": 32768,
+                "titable/1/player_3_strategy": 32768,
+                "titable/player_4_colour": 32768,
+                "titable/1/player_4_strategy": 32768,
+                "titable/player_5_colour": 32768,
+                "titable/1/player_5_strategy": 32768,
+                "titable/player_6_colour": 32768,
+                "titable/1/player_6_strategy": 32768,
+                "titable/url": 32768,
+                "titable/lights": 32768,
+                "titable/num_players": 32768,
+                "titable/game_ds_2": 32768,
+                "titable/game_stack": 32768,
+                "titable/game": 32768,
+                "titable/game_ds_3": 32768,
+                "titable/1/player_1_has_played_strategy": 32768,
+                "titable/game_ds_4": 32768,
+                "titable/1/player_2_has_played_strategy": 32768,
+                "titable/game_ds_5": 32768,
+                "titable/1/player_3_has_played_strategy": 32768,
+                "titable/game_ds_6": 32768,
+                "titable/1/player_4_has_played_strategy": 32768,
+                "titable/game_ds_7": 32768,
+                "titable/1/player_5_has_played_strategy": 32768,
+                "titable/game_ds_8": 32768,
+                "titable/1/player_1_has_passed": 32768,
+                "titable/game_ds_9": 32768,
+                "titable/1/player_2_has_passed": 32768,
+                "titable/game_ds_10": 32768,
+                "titable/1/player_3_has_passed": 32768,
+                "titable/game_ds_11": 32768,
+                "titable/1/player_4_has_passed": 32768,
+                "titable/game_ds_12": 32768,
+                "titable/1/player_5_has_passed": 32768,
+                "titable/game_ds_13": 32768,
+                "titable/2/player_1_strategy": 32768,
+                "titable/2/player_2_strategy": 32768,
+                "titable/2/player_3_strategy": 32768,
+                "titable/2/player_4_strategy": 32768,
+                "titable/2/player_5_strategy": 32768,
+                "titable/game_ds_14": 32768,
+                "titable/game_ds_15": 32768,
+                "titable/2/player_5_has_played_strategy": 32768,
+            }
         print("Mock file operations")
         with file_mock.do():
-            for num, colour, strategy in zip(
-                range(6), colours.PLAYER_COLOURS, logic.Strategies.ALL
-            ):
-                open(f"titable/player_{num + 1}_colour", "w").write(str(colour.id))
-                open(f"titable/1/player_{num + 1}_strategy", "w").write(str(strategy))
+            if not force_file_mock:
+                for num, colour, strategy in zip(
+                    range(6), colours.PLAYER_COLOURS, logic.Strategies.ALL
+                ):
+                    open(f"titable/player_{num + 1}_colour", "w").write(str(colour.id))
+                    open(f"titable/1/player_{num + 1}_strategy", "w").write(
+                        str(strategy)
+                    )
             inner_main()
     else:
         inner_main()

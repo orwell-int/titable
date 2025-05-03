@@ -1,8 +1,10 @@
 import os
+import json
 
 import colours
 from colours import Colour
 import device
+import events
 
 
 USE_UNICODE = False
@@ -43,6 +45,7 @@ class Strategies:
         TECHNOLOGY,
         IMPERIAL,
     ]
+    STR_KEY_STRATEGIES = [str(x) for x in ALL]
 
     @staticmethod
     def to_string(strategy: int):
@@ -159,11 +162,13 @@ class Game:
         self._round = round
         self._turn = turn
         self._iteration = 0  # count inside a turn
-        self._player_index_to_hide_next = None
-        self._player_index_to_hide_now = None
+        self._player_index_passed = None
+        self._player_index_to_hide = None
         self._player_index_hidden = None
         self._player_index_used_strategy = None
         self._stack = []
+        self._active_players = -99
+        # trade goods by strategy
         if available_strategies:
             self._available_strategies = available_strategies
         else:
@@ -181,13 +186,45 @@ class Game:
             self._players = players
         else:
             self._players = []
-            for i in range(num_players):
+            for _ in range(num_players):
                 self._add_player()
         if available_colours:
             self._available_colours = available_colours
         else:
             self._available_colours = set(colours.PLAYER_COLOURS)
         self._ordered_players = []
+        # create a reference for delta_map
+        self._stack.append(self.to_map())
+        self._load_saved_stack()
+
+    def _load_saved_stack(self):
+        if device.file_exists_and_not_empty(self._get_path("_stack")):
+            expected_stack_size = int(open(self._get_path("_stack"), "r").read())
+            if expected_stack_size < 2:
+                print("No stack to load")
+                return
+            latest = self._stack[-1]
+            for i in range(2, expected_stack_size + 1):
+                new = latest.copy()
+                delta = json.loads(open(self._get_path(f"_ds_{i}"), "r").read())
+                for key, value in delta.items():
+                    if key in Strategies.STR_KEY_STRATEGIES:
+                        key = int(key)
+                    new[key] = value
+                print("push to stack:", new)
+                self._stack.append(new)
+                latest = new
+            self.from_map(latest, skip_players=True)
+            self._active_players = 0
+            for player in self._players:
+                # make sure we read from the proper round
+                player.read()
+                print("Restored player:", player)
+                if not player.hidden:
+                    self._active_players += 1
+            if Game.PHASE_ACTION == self._phase:
+                self._ordered_players = self.order_players()
+            self.stop_playing()  # we are back to the Welcome menu
 
     def _to_str_uint(self, value):
         if value is None:
@@ -219,8 +256,7 @@ class Game:
             "_current_player",
             "_previous_player",
             "_next_player",
-            "_player_index_to_hide_next",
-            "_player_index_to_hide_now",
+            "_player_index_passed",
             "_player_index_hidden",
             "_player_index_used_strategy",
         ):
@@ -261,6 +297,7 @@ class Game:
 
     def to_map(self):
         print("Game.to_map")
+        print(f"Phase: {self._phase}")
         content = {}
         for name in self._get_names():
             item = getattr(self, name)
@@ -273,9 +310,10 @@ class Game:
         for strategy in Strategies.ALL:
             goods = self._available_strategies[strategy]
             content[strategy] = goods
+        print(content)
         return content
 
-    def from_map(self, content):
+    def from_map(self, content, skip_players=True):
         print("Game.from_map")
         for name in self._get_names():
             value = content[name]
@@ -288,12 +326,15 @@ class Game:
         for strategy in Strategies.ALL:
             goods = content[strategy]
             self._available_strategies[strategy] = goods
+        print(f"Phase: {self._phase}")
+        if skip_players:
+            return
         if Game.PHASE_ACTION == self._phase:
             self._ordered_players = self.order_players()
         players_to_write = set()
-        if self._player_index_to_hide_next is not None:
-            # print("_player_index_to_hide_next =", self._player_index_to_hide_next)
-            player = self._ordered_players[self._player_index_to_hide_next]
+        if self._player_index_passed is not None:
+            # print("_player_index_passed =", self._player_index_to_hide_next)
+            player = self._ordered_players[self._player_index_passed]
             player.undo_pass()
             players_to_write.add(player)
         if self._player_index_hidden is not None:
@@ -308,13 +349,38 @@ class Game:
         for player in players_to_write:
             player.write()
 
-    def _get_path(self):
-        return f"titable/game"
+    def _delta_map(self, old_map, new_map):
+        delta_map = {}
+        for key, old in old_map.items():
+            try:
+                new = new_map[key]
+            except KeyError as ex:
+                print("key:", key)
+                print("old:", old)
+                print("old_map:", old_map)
+                print("new_map:", new_map)
+                raise ex
+            if old != new:
+                delta_map[key] = new
+        return delta_map
+
+    def _get_path(self, suffix=""):
+        return f"titable/game{suffix}"
 
     def write(self, also_write_players=True):
         print("Game.write")
+        if self._stack:
+            reference = self._stack[-1]
+        else:
+            reference = None
         self._stack.append(self.to_map())
-        open(self._get_path(), "w").write(self.to_content())
+        if reference is not None:
+            delta = self._delta_map(reference, self._stack[-1])
+            delta_content = json.dumps(delta)
+            print("delta_content:", delta_content)
+            device.create_file(self._get_path(f"_ds_{len(self._stack)}"), delta_content)
+        device.create_file(self._get_path("_stack"), str(len(self._stack)))
+        device.create_file(self._get_path(), self.to_content())
         if also_write_players:
             for player in self._players:
                 player.write()
@@ -334,7 +400,7 @@ class Game:
 
     def get_player(self, num: int):
         index = (num - 1) % self._num_players
-        if self._ordered_players:
+        if Game.PHASE_ACTION == self._phase:
             return self._ordered_players[index]
         else:
             return self._players[index]
@@ -402,54 +468,6 @@ class Game:
     def iteration(self):
         return self._iteration
 
-    def _compute_time_key(self, round, turn, iteration):
-        return round * 1000 + turn * 10 + iteration
-
-    @property
-    def time_key(self):
-        return self._compute_time_key(self._round, self._turn, self._iteration)
-
-    def get_time_key(self, iteration, turn=0, round=0):
-        must_be_explicit = False
-        if round == 0:
-            round = self._round
-        elif round != self._round:
-            must_be_explicit = True
-            if round < 0:
-                round = self._round - round
-                if round <= 0:
-                    raise Exception(f"Computed invalid value for round: {round}")
-        if turn == 0:
-            if must_be_explicit:
-                raise Exception("Turn must be explicit")
-            else:
-                turn = self._turn
-        elif turn != self._turn:
-            must_be_explicit = True
-            if turn < 0:
-                if must_be_explicit:
-                    raise Exception("Turn must be explicit")
-                else:
-                    turn = self._turn - turn
-                    if turn <= 0:
-                        raise Exception(f"Computed invalid value for turn: {turn}")
-        if iteration == 0:
-            if must_be_explicit:
-                raise Exception("iteration must be explicit")
-            else:
-                iteration = self._iteration
-        elif iteration != self._iteration:
-            if iteration < 0:
-                if must_be_explicit:
-                    raise Exception("iteration must be explicit")
-                else:
-                    iteration = self._iteration - iteration
-                    if iteration <= 0:
-                        raise Exception(
-                            f"Computed invalid value for iteration: {iteration}"
-                        )
-        return self._compute_time_key(round, turn, iteration)
-
     def switch_state(self, new_state):
         self._state = new_state
 
@@ -461,6 +479,7 @@ class Game:
                 self._turn = 0
                 self._round = 1
                 self._start_phase_strategy()
+                self.write()
             elif Game.PHASE_STRATEGY == self._phase:
                 pass
         else:
@@ -482,12 +501,14 @@ class Game:
         self._previous_player = None
         self._ordered_players = []
         self._phase = Game.PHASE_STRATEGY
-        for strategy in set(Strategies.ALL) - set(self._available_strategies.keys()):
-            self._available_strategies[strategy] = 0
 
     def _end_phase_strategy(self):
-        for strategy in self._available_strategies.keys():
-            self._available_strategies[strategy] += 1
+        used_strategies = set([p.strategy for p in self._players])
+        for strategy in Strategies.ALL:
+            if strategy in used_strategies:
+                self._available_strategies[strategy] = 0
+            else:
+                self._available_strategies[strategy] += 1
         self._ordered_players = self.order_players()
         # print("ordered players:")
         # print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
@@ -500,19 +521,14 @@ class Game:
         self._next_player = 2
         self._previous_player = None
         self._active_players = self._num_players
-        self._player_index_to_hide_now = None
-        self._player_index_to_hide_next = None
+        self._player_index_to_hide = None
+        self._player_index_passed = None
         self._player_index_hidden = None
         self._player_index_used_strategy = None
 
     def _end_phase_action(self):
         print("_end_phase_action")
-        self._phase = Game.PHASE_AGENDA
-        self._iteration = 0
-        self._ordered_players = []
-        for player in self._players:
-            player.unhide()
-        self._turn = 0
+        pass
 
     def _start_phase_status(self):
         self._iteration = 0
@@ -524,7 +540,12 @@ class Game:
         self._iteration = 0
 
     def _start_phase_agenda(self):
-        pass
+        self._phase = Game.PHASE_AGENDA
+        self._iteration = 0
+        self._ordered_players = []
+        for player in self._players:
+            player.unhide()
+        self._turn = 0
 
     def _end_phase_agenda(self):
         pass
@@ -546,48 +567,70 @@ class Game:
 
     def previous(self):
         print("Game.previous")
-        print("phase:", self._phase)
+        print("phase before:", self._phase)
         if Game.PHASE_STRATEGY == self._phase:
             raise Exception("Not possible?")
+        players_to_write = set()
+        old = self._stack.pop()
+        print("old:", old)
+        self.from_map(self._stack[-1], skip_players=True)
+        print("phase updated:", self._phase)
         if Game.PHASE_ACTION == self._phase:
-            content = self._stack.pop()
-            self.from_map(content)
+            self._ordered_players = self.order_players()
+        key = "_player_index_passed"
+        if key in old:
+            player_index = old[key]
+            if player_index is not None:
+                player = self._ordered_players[player_index]
+                player.undo_pass()
+                players_to_write.add(player)
+        key = "_player_index_hidden"
+        if key in old:
+            player_index = old[key]
+            if player_index is not None:
+                player = self._ordered_players[player_index]
+                player.unhide()
+                players_to_write.add(player)
         else:
-            content = self._stack.pop()
-            self.from_map(content)
-        # elif Game.PHASE_ACTION == self._phase:
-        #     if self._turn == 1 and self._iteration == 0:
-        #         self._start_phase_strategy()
-        #     else:
-        #         self._iteration -= 1
-        #         if self._iteration < 0:
-        #             print("???")
-        #             self._iteration = -999
-        #             self._previous_turn()
-        # elif Game.PHASE_AGENDA == self._phase:
-        #     self._start_phase_action()
-        # elif Game.PHASE_STATUS == self._phase:
-        #     if self._iteration == 0:
-        #         self._start_phase_agenda()
-        #     else:
-        #         self._iteration -= 1
+            player_index = None
+        self._player_index_to_hide = player_index
+        key = "_player_index_used_strategy"
+        if key in old:
+            player_index = old[key]
+            if player_index is not None:
+                player = self._ordered_players[player_index]
+                player.unuse_strategy()
+                players_to_write.add(player)
+        for player in players_to_write:
+            player.write()
+        print("ordered players (previous):")
+        print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
         return self._phase
 
-    def next(self):
+    def next(self, play_event=None):
         self.print_player_nums("Game.next")
-        self.write()
-        self._player_index_used_strategy = None
-        print("phase:", self._phase)
+        if play_event is not None:
+            if events.PLAY_STRATEGY == play_event:
+                self.current_player.use_strategy()
+            elif events.PLAY_TACTICAL_OR_COMPONENT == play_event:
+                pass
+            elif events.PLAY_SKIP == play_event:
+                pass
+            elif events.PLAY_PASS == play_event:
+                assert self.current_player.can_pass
+                self.current_player.do_pass()
+        print("Phase before:", self._phase)
         if Game.PHASE_STRATEGY == self._phase:
             if self.players_have_strategy:
                 self._end_phase_strategy()
                 self._start_phase_action()
         elif Game.PHASE_ACTION == self._phase:
+            self._previous_player = self._current_player
+            self._hide_player()
             if self.players_have_passed:
                 self._end_phase_action()
+                self._start_phase_agenda()
             else:
-                self._previous_player = self._current_player
-                self._hide_player()
                 self._current_player = self._next_player
                 self._compute_next_player()
                 # print("ordered players:")
@@ -613,6 +656,15 @@ class Game:
                 self._current_player = self._next_player
                 self._compute_next_player()
                 self.print_player_nums("next ++status")
+        print("Phase updated:", self._phase)
+        self.write()
+        # remember for next iteration which player has passed
+        self._player_index_to_hide = self._player_index_passed
+        self._player_index_used_strategy = None
+        self._player_index_passed = None
+        self._player_index_hidden = None
+        print("ordered players (next):")
+        print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
         return self._phase
 
     # def get_next_player(self) -> "Player":
@@ -640,8 +692,7 @@ class Game:
 
     @property
     def current_player(self):
-        if self._current_player is None:
-            return None
+        assert self._current_player is not None
         if self._ordered_players:
             return self._ordered_players[self._current_player - 1]
         else:
@@ -666,17 +717,10 @@ class Game:
             return None
 
     def _hide_player(self):
-        if self._player_index_to_hide_now is not None:
-            player_index = self._player_index_to_hide_now
+        if self._player_index_to_hide is not None:
+            player_index = self._player_index_to_hide
             self._player_index_hidden = player_index
-            self._player_index_to_hide_now = None
             self._ordered_players[player_index].hide()
-        else:
-            self._player_index_hidden = None
-        if self._player_index_to_hide_next is not None:
-            self._player_index_to_hide_now = self._player_index_to_hide_next
-            self._player_index_to_hide_next = None
-        # print(f"Future hides: {self._player_index_to_hide_now} | {self._player_index_to_hide_next}")
 
     def _compute_next_player(self, only_value=False):
         print(
@@ -744,7 +788,7 @@ class Game:
             if player_index is None:
                 raise Exception(f"Unable to remove passing player: {player_num}")
             else:
-                self._player_index_to_hide_next = player_index
+                self._player_index_passed = player_index
         elif key == "used_strategy":
             player_num = value
             print(f"Flag player to use strategy: {player_num}")
@@ -763,9 +807,8 @@ class Game:
         string += f"current_player={self._current_player}, "
         string += f"previous_player={self._previous_player}, "
         string += f"next_player={self._next_player}, "
-        string += f"player_index_to_hide_next={self._player_index_to_hide_next}, "
-        string += f"player_index_to_hide_now={self._player_index_to_hide_now}, "
-        string += f"player_index_to_hidden={self._player_index_hidden}, "
+        string += f"player_index_passed={self._player_index_passed}, "
+        string += f"player_index_hidden={self._player_index_hidden}, "
         string += f"player_index_used_strategy={self._player_index_used_strategy}, "
         string += f"state={self._state}, "
         string += f"phase={self._phase}, round={self._round}, turn={self._turn}, "
@@ -867,9 +910,11 @@ class Property:
                 self._saved_value = self._value
                 # print(f"Read {name}:", value)
             except Exception as ex:
+                self._value = self._default
                 print(ex)
                 print(f"Invalid file {self._name}, ignore")
         else:
+            self._value = self._default
             print(f"File does not exist: {path}")
 
     def write(self):

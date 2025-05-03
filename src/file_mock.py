@@ -8,6 +8,8 @@ from unittest.mock import Mock
 CONTENT = {}
 STATS = {}
 PRINT_IN_MOCK = True
+# set this to True to dump the content of the mock (to potentially reuse it)
+PRINT_DATA = False
 
 
 class MockOpen(Mock):
@@ -174,14 +176,22 @@ def print_content():
 
 
 class ClearContent:
+    def __init__(self, print_data=False):
+        self._print_data = print_data
+
     def __enter__(self):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         global CONTENT
+        global STATS
+        if self._print_data:
+            print("CONTENT")
+            print(CONTENT)
+            print("STATS")
+            print(STATS)
         print("Clear content")
         CONTENT = {}
-        global STATS
         STATS = {}
 
 
@@ -200,7 +210,7 @@ def do():
             unittest.mock.patch("os.path.isfile") as mock_isfile,
             unittest.mock.patch("os.path.getsize") as mock_getsize,
             unittest.mock.patch("builtins.open", MockOpen),
-            ClearContent(),
+            ClearContent(print_data=PRINT_DATA),
         ):
             mock_dir_exists.side_effect = mock_dir_exists_results
             mock_create_dir.side_effect = mock_create_dir_results
