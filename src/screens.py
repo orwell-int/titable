@@ -151,9 +151,9 @@ class Screen:
         self._on_return = None
         self._touchables = []
         self.title_rectangle = blocks.Rectangle(
-            1,
-            1,
-            MAX_X - 1,
+            0,
+            0,
+            MAX_X,
             TITLE_HEIGHT,
             "",
             side_colour,
@@ -173,19 +173,19 @@ class Screen:
         else:
             self._title_text = None
         self.left_bar = blocks.Rectangle(
-            1,
-            TITLE_HEIGHT,
+            0,
+            TITLE_HEIGHT - 1,
             LEFT_BAR_WIDTH,
-            MAX_Y - TITLE_HEIGHT,
+            MAX_Y - (TITLE_HEIGHT - 1),
             None,
             side_colour,
             Screen.COLOUR_BORDER,
         )
         self.line = blocks.Line(
-            2,
-            TITLE_HEIGHT,
+            1,
+            TITLE_HEIGHT - 1,
             LEFT_BAR_WIDTH - 1,
-            TITLE_HEIGHT,
+            TITLE_HEIGHT - 1,
             side_colour,
         )
         self.background = blocks.Rectangle(
@@ -1673,9 +1673,9 @@ def main(select=None):
     elif 10 == select:
         game = logic.Game.build_fake_game()
         game.start_playing()
-        player = game.get_next_player()
+        player = game.next_player
         player.strategy = Strategies.WARFARE
-        player = game.get_next_player()
+        player = game.next_player
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategy(lights, game)
         screen_setup_colour.draw()
@@ -1687,26 +1687,27 @@ def main(select=None):
     elif 12 == select:
         game = logic.Game.build_fake_game()
         game.start_playing()
-        player = game.get_next_player()
+        player = game.next_player
         player.strategy = Strategies.WARFARE
-        player = game.get_next_player()
+        player = game.next_player
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategyPlayer(lights, game, player_num=5)
         screen_setup_colour.draw()
     elif 13 <= select <= 15:
         game = logic.Game.build_fake_game()
         game.start_playing()
-        player = game.get_next_player()
+        game.next()
+        player = game.get_player(1)
         player.strategy = Strategies.WARFARE
-        player = game.get_next_player()
+        player = game.get_player(2)
         player.strategy = Strategies.TECHNOLOGY
-        player = game.get_next_player()
+        player = game.get_player(3)
         player.strategy = Strategies.DIPLOMACY
-        player = game.get_next_player()
+        player = game.get_player(4)
         player.strategy = Strategies.CONSTRUCTION
-        player = game.get_next_player()
+        player = game.get_player(5)
         player.strategy = Strategies.TRADE
-        player = game.get_next_player()
+        player = game.get_player(6)
         player.strategy = Strategies.LEADERSHIP
         if 13 == select:
             screen_strategy_player = ScreenStrategyPlayer(lights, game, player.num)

@@ -73,6 +73,7 @@ class Lights:
             print(f"{url} -> {data_str}")
         else:
             try:
+                print(url, data)
                 requests2.post(url, json=data)
             except Exception as ex:
                 print("Could not make call to", url)

@@ -750,6 +750,10 @@ class Game:
             if self._next_player is None:
                 return None
             return self._players[self._next_player - 1]
+        else:
+            if self._next_player is None:
+                return None
+            return self._players[self._next_player - 1]
         return None
         # raise Exception(f"next_player -> not implemented for phase {self._phase}")
 
