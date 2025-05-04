@@ -1406,10 +1406,10 @@ class ScreenAgenda(Screen):
         )
         self._description.add_more_text("agenda")
         self._description.add_more_text("phase")
-        self._description.add_more_text("if")
+        self._description.add_more_text("if a player")
+        self._description.add_more_text("took")
+        self._description.add_more_text("control of")
         self._description.add_more_text("Mecatol")
-        self._description.add_more_text("was")
-        self._description.add_more_text("captured")
 
         self._touchables.append(self._button_previous)
         self._touchables.append(self._button_next)
