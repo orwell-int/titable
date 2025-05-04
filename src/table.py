@@ -409,9 +409,10 @@ def main():
                     range(6), colours.PLAYER_COLOURS, logic.Strategies.ALL
                 ):
                     open(f"titable/player_{num + 1}_colour", "w").write(str(colour.id))
-                    open(f"titable/1/player_{num + 1}_strategy", "w").write(
-                        str(strategy)
-                    )
+                    if num > 0:
+                        open(f"titable/1/player_{num + 1}_strategy", "w").write(
+                            str(strategy)
+                        )
             inner_main()
     else:
         inner_main()

@@ -860,6 +860,7 @@ class ScreenStrategy(Screen):
             colours.PALETTE_LIGHT_GREEN,
             # Screen.COLOUR_BORDER,
             button_font,
+            cross_colour=colours.PALETTE_DARK_BLUE,
         )
         self._button_end_phase.action = DelaySendEvent(events.NEXT)
         self._buttons, self._rectangles = self._create_grid_players(
@@ -923,7 +924,6 @@ class ScreenStrategyPlayer(Screen):
         events.HANDLER.register(events.PICK_STRATEGY_SWAP, self)
         events.HANDLER.register(events.UNPICK_STRATEGY_SWAP, self)
         events.HANDLER.register(events.SWAP_STRATEGY, self)
-        button_font = Widgets.FONTS.DejaVu18
         num_columns = 3
         num_lines = 3
         dx = 4
@@ -942,6 +942,7 @@ class ScreenStrategyPlayer(Screen):
                 is_for_current_player = False
                 if is_colour:
                     colour = Strategies.to_colour(strategy_index)
+                    assert colour is not None
                     text = f"{strategy_index} [{game.available_strategies[strategy_index]}]"
                     if strategy_index in self._strategies_to_players:
                         other_player = self._strategies_to_players[strategy_index]
@@ -1629,10 +1630,6 @@ class ScreenNumPlayer(Screen):
             has_return=False,
         )
         button_font = Widgets.FONTS.DejaVu18
-        dy = 4
-        top_button_sy = TITLE_HEIGHT - dy * 2
-        top_button_sx = 180
-        delta_x = (MAX_X - LEFT_BAR_WIDTH - top_button_sx) // 2
         self._buttons, self._rectangles = self._create_grid_numbers(
             button_font, events.SELECT_NUM_PLAYERS
         )
@@ -1759,9 +1756,9 @@ def main(select=None):
     elif 10 == select:
         game = logic.Game.build_fake_game()
         game.start_playing()
-        player = game.next_player
+        player = game.get_player(1)
         player.strategy = Strategies.WARFARE
-        player = game.next_player
+        player = game.get_player(2)
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategy(lights, game)
         screen_setup_colour.draw()
@@ -1773,9 +1770,9 @@ def main(select=None):
     elif 12 == select:
         game = logic.Game.build_fake_game()
         game.start_playing()
-        player = game.next_player
+        player = game.get_player(1)
         player.strategy = Strategies.WARFARE
-        player = game.next_player
+        player = game.get_player(2)
         player.strategy = Strategies.TECHNOLOGY
         screen_setup_colour = ScreenStrategyPlayer(lights, game, player_num=5)
         screen_setup_colour.draw()

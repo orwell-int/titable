@@ -547,6 +547,7 @@ class ButtonRectangle(Visible, Touchable, ColorfulButton):
         disabled_fill_colour=None,
         disabled_border_colour=None,
         inset=0,
+        cross_colour: Colour = colours.WHITE,
     ):
         # super().__init__()
         Visible.__init__(self)
@@ -566,6 +567,7 @@ class ButtonRectangle(Visible, Touchable, ColorfulButton):
         self.y = y
         self.dx = dx
         self.dy = dy
+        self._cross_colour = cross_colour
         # self.decoration = decoration
         # self.align_decoration_h = align_decoration_h
         # self.align_decoration_v = align_decoration_v
@@ -618,6 +620,15 @@ class ButtonRectangle(Visible, Touchable, ColorfulButton):
                 self._more_decoration_texts[index].text = text
                 self._changed = True
 
+    @property
+    def cross_colour(self):
+        return self._cross_colour
+
+    @cross_colour.setter
+    def cross_colour(self, cross_colour: Colour):
+        self._cross_colour = cross_colour
+        self._changed = True
+
     def __repr__(self):
         string = f"ButtonRectangle(x={self.x}, y={self.y}, "
         # string += f"decoration={self.decoration}, "
@@ -626,6 +637,7 @@ class ButtonRectangle(Visible, Touchable, ColorfulButton):
         # string += f"align_decoration_v={self.align_decoration_v}, "
         string += f"fill_colour={self._fill_colour}, "
         string += f"border_colour={self._border_colour}, "
+        string += f"cross_colour={self._cross_colour}, "
         string += f"disabled_fill_colour={self._disabled_fill_colour}, "
         string += f"disabled_border_colour={self._disabled_border_colour},"
         string += f"text_colour={self._text_colour}, "
@@ -684,6 +696,21 @@ class ButtonRectangle(Visible, Touchable, ColorfulButton):
                 dy - 2 * layers,
                 self._current_fill_colour.raw_int,
             )
+            if not self._enabled:
+                Lcd.drawLine(
+                    x + layers,
+                    y + layers,
+                    x + dx - layers - 1,
+                    y + dy - layers - 1,
+                    self._cross_colour.raw_int,
+                )
+                Lcd.drawLine(
+                    x + layers,
+                    y + dy - layers - 1,
+                    x + dx - layers - 1,
+                    y + layers,
+                    self._cross_colour.raw_int,
+                )
             drawn = True
             force_children = True
         else:
