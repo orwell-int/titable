@@ -198,6 +198,7 @@ r"""
 
 class Screen:
     COLOUR_BORDER = colours.PALETTE_GOLD
+    COLOUR_BACKGROUND = colours.PALETTE_DARK_BLUE
 
     def __init__(
         self,
@@ -273,8 +274,8 @@ class Screen:
             INNER_X,
             INNER_Y,
             None,
-            colours.PALETTE_DARK_BLUE,
-            colours.PALETTE_DARK_BLUE,
+            Screen.COLOUR_BACKGROUND,
+            Screen.COLOUR_BACKGROUND,
         )
         if has_return:
             max_d = max(LEFT_BAR_WIDTH // 2, TITLE_HEIGHT // 2)
@@ -396,8 +397,8 @@ class Screen:
             for column in range(num_columns):
                 last_column = column == (num_columns - 1)
                 index = column + line * num_columns
-                x = LEFT_BAR_WIDTH + (button_sx - 1) * column
-                y = TITLE_HEIGHT + (button_sy - 1) * line
+                x = LEFT_BAR_WIDTH - 1 + (button_sx - 1) * column
+                y = TITLE_HEIGHT - 1 + (button_sy - 1) * line
                 sx = MAX_X - x if (last_column) else button_sx
                 sy = MAX_Y - y if (last_line) else button_sy
                 if index < num_players:
@@ -422,7 +423,7 @@ class Screen:
                         sx,
                         sy,
                         None,
-                        colours.WHITE,
+                        Screen.COLOUR_BACKGROUND,
                         Screen.COLOUR_BORDER,
                     )
                     rectangles.append(rectangle)
@@ -659,7 +660,7 @@ class ScreenSetupName(Screen):
                         sx,
                         sy,
                         letter,
-                        colours.PALETTE_DARK_BLUE,
+                        Screen.COLOUR_BACKGROUND,
                         Screen.COLOUR_BORDER,
                         rectangle_font,
                     )
@@ -1391,8 +1392,8 @@ class ScreenAgenda(Screen):
             self._button_next.left - self._button_previous.right + 2,
             INNER_Y + 1 - y_offset * 2,
             "Perform",
-            colours.PALETTE_DARK_BLUE,
-            colours.PALETTE_DARK_BLUE,
+            Screen.COLOUR_BACKGROUND,
+            Screen.COLOUR_BACKGROUND,
             Widgets.FONTS.DejaVu18,
         )
         self._description.add_more_text("agenda")
@@ -1514,8 +1515,8 @@ class ScreenStatus(Screen):
             self._button_next.left - self._button_previous.right + 2,
             INNER_Y + 1 - y_offset * 2,
             "Score",
-            colours.PALETTE_DARK_BLUE,
-            colours.PALETTE_DARK_BLUE,
+            Screen.COLOUR_BACKGROUND,
+            Screen.COLOUR_BACKGROUND,
             Widgets.FONTS.DejaVu18,
         )
         self._description.add_more_text("at most")
@@ -1645,8 +1646,8 @@ class ScreenNumPlayer(Screen):
             for column in range(num_columns):
                 last_column = column == (num_columns - 1)
                 index = column + line * num_columns
-                x = LEFT_BAR_WIDTH + (button_sx - 1) * column
-                y = TITLE_HEIGHT + (button_sy - 1) * line
+                x = LEFT_BAR_WIDTH - 1 + (button_sx - 1) * column
+                y = TITLE_HEIGHT - 1 + (button_sy - 1) * line
                 sx = MAX_X - x if (last_column) else button_sx
                 sy = MAX_Y - y if (last_line) else button_sy
                 if 4 <= index < max_num_players:
@@ -1671,7 +1672,7 @@ class ScreenNumPlayer(Screen):
                         sx,
                         sy,
                         None,
-                        colours.WHITE,
+                        Screen.COLOUR_BACKGROUND,
                         Screen.COLOUR_BORDER,
                     )
                     rectangles.append(rectangle)
