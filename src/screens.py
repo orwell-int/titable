@@ -118,6 +118,83 @@ class DelaySendEvent:
     def __str__(self):
         return f"<{events.to_string(self._event)}>"
 
+r"""
+ MAX_X
++-----+
+|     |
+|     | MAX_Y
+|     |
++-----+
+
++-----------------------------------------------------------------------------+
+|                                                                  ^          |
+|   ----                                  TITLE              TITLE_HEIGHT     |
+|  /    \                                                          v          |
+|  | << |  +------------------------------------------------------------------+
+|  \    /  |                                                                  |
+|   ----   |                                          ^                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          | <-------------------------- INNER_X -----+---------------------> |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                       INNER_Y                    |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|          |                                          |                       |
+|<-------->|(LEFT_BAR_WIDTH)                          |                       |
+|          |                                          V                       |
+|          |                                                                  |
++----------+------------------------------------------------------------------+
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+|                              title_rectangle                                |
+|                                                                             |
+|...line...+------------------------------------------------------------------+
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+| left_bar |                            background                            |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
+|          |                                                                  |
++----------+------------------------------------------------------------------+
+
+"""
 
 class Screen:
     COLOUR_BORDER = colours.PALETTE_GOLD
@@ -184,18 +261,20 @@ class Screen:
         self.line = blocks.Line(
             1,
             TITLE_HEIGHT - 1,
-            LEFT_BAR_WIDTH - 1,
+            LEFT_BAR_WIDTH - 2,
             TITLE_HEIGHT - 1,
             side_colour,
         )
+        # Trick: use same colour for border_colour as for fill_colour
+        #        to make it look like there is no border
         self.background = blocks.Rectangle(
             LEFT_BAR_WIDTH,
             TITLE_HEIGHT,
-            MAX_X - LEFT_BAR_WIDTH,
-            MAX_Y - TITLE_HEIGHT,
+            INNER_X,
+            INNER_Y,
             None,
             colours.PALETTE_DARK_BLUE,
-            Screen.COLOUR_BORDER,
+            colours.PALETTE_DARK_BLUE,
         )
         if has_return:
             max_d = max(LEFT_BAR_WIDTH // 2, TITLE_HEIGHT // 2)
