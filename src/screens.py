@@ -52,7 +52,7 @@ class ScreenTypes:
 
 MAX_X = 320
 MAX_Y = 240
-TITLE_HEIGHT = 28
+TITLE_HEIGHT = 40
 LEFT_BAR_WIDTH = 50
 
 INNER_X = MAX_X - LEFT_BAR_WIDTH - 1
@@ -446,15 +446,15 @@ class ScreenWelcome(Screen):
         )
         self._game = game
         button_sx = 150
-        button_sy = 65
+        dy = 4
+        button_sy = (INNER_Y - 4 * dy) // 3
         button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
         button_x_offset = LEFT_BAR_WIDTH + 1 + button_x_delta
-        dx = 4
-        dy = 4
         button_font = Widgets.FONTS.DejaVu18
+        button_y = TITLE_HEIGHT + dy
         self._button_setup = blocks.ButtonRectangle(
             button_x_offset,
-            TITLE_HEIGHT + dy,
+            button_y,
             button_sx,
             button_sy,
             "Setup",
@@ -464,9 +464,10 @@ class ScreenWelcome(Screen):
         )
         self._button_setup.action = DelaySendEvent(events.SETUP)
         play_or_resume = "Play"
+        button_y += button_sy + dy
         self._button_play = blocks.ButtonRectangle(
             button_x_offset,
-            TITLE_HEIGHT + dy + button_sy + dy,
+            button_y,
             button_sx,
             button_sy,
             play_or_resume,
@@ -475,9 +476,10 @@ class ScreenWelcome(Screen):
             button_font,
         )
         self._button_play.action = DelaySendEvent(events.PLAY)
+        button_y += button_sy + dy
         self._button_reset = blocks.ButtonRectangle(
             button_x_offset,
-            TITLE_HEIGHT + dy + (button_sy + dy) * 2,
+            button_y,
             button_sx,
             button_sy,
             "Reset",
