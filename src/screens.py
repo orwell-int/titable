@@ -1359,8 +1359,6 @@ class ScreenAgenda(Screen):
             x_weight_player_button * 2 + x_weight_action_button
         )
         player_button_sx = int(x_ratio_player_button * (INNER_X + 1))
-        action_button_sx = (INNER_X + 1) - 2 * player_button_sx
-        small_button_height = (INNER_Y + 1) // 3 + 1
 
         text_previous = "Action"
         self._button_previous = blocks.ButtonRectangle(
@@ -1468,8 +1466,6 @@ class ScreenStatus(Screen):
             x_weight_player_button * 2 + x_weight_action_button
         )
         player_button_sx = int(x_ratio_player_button * (INNER_X + 1))
-        action_button_sx = (INNER_X + 1) - 2 * player_button_sx
-        small_button_height = (INNER_Y + 1) // 3 + 1
 
         if player_previous:
             colour = player_previous.colour
@@ -1559,15 +1555,15 @@ class ScreenMenu(Screen):
         )
         self.on_return = ScreenTypes.SAVED_SCREEN
         button_sx = 150
-        button_sy = 65
+        dy = 4
+        button_sy = (INNER_Y - 4 * dy) // 3
         button_x_delta = (MAX_X - (LEFT_BAR_WIDTH + 1) - button_sx) // 2
         button_x_offset = LEFT_BAR_WIDTH + 1 + button_x_delta
-        dx = 4
-        dy = 4
         button_font = Widgets.FONTS.DejaVu18
+        button_y = TITLE_HEIGHT + dy
         self._button_welcome = blocks.ButtonRectangle(
             button_x_offset,
-            TITLE_HEIGHT + dy,
+            button_y,
             button_sx,
             button_sy,
             "Welcome",
@@ -1576,9 +1572,10 @@ class ScreenMenu(Screen):
             button_font,
         )
         self._button_welcome.action = DelaySendEvent(events.WELCOME, debug=True)
+        button_y += button_sy + dy
         self._button_reset_phase = blocks.ButtonRectangle(
             button_x_offset,
-            TITLE_HEIGHT + dy + button_sy + dy,
+            button_y,
             button_sx,
             button_sy,
             "Reset phase",
@@ -1588,9 +1585,10 @@ class ScreenMenu(Screen):
         )
         self._button_reset_phase.action = DelaySendEvent(events.RESET_PHASE)
         self._button_reset_phase.enabled = False
+        button_y += button_sy + dy
         self._button_reset_round = blocks.ButtonRectangle(
             button_x_offset,
-            TITLE_HEIGHT + dy + (button_sy + dy) * 2,
+            button_y,
             button_sx,
             button_sy,
             "Reset round",
