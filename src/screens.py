@@ -118,6 +118,7 @@ class DelaySendEvent:
     def __str__(self):
         return f"<{events.to_string(self._event)}>"
 
+
 r"""
  MAX_X
 +-----+
@@ -195,6 +196,7 @@ r"""
 +----------+------------------------------------------------------------------+
 
 """
+
 
 class Screen:
     COLOUR_BORDER = colours.PALETTE_GOLD
@@ -846,14 +848,14 @@ class ScreenStrategy(Screen):
         button_font = Widgets.FONTS.DejaVu18
         dy = 4
         top_button_sy = TITLE_HEIGHT - dy * 2
-        top_button_sx = 180
+        top_button_sx = 200
         delta_x = (MAX_X - LEFT_BAR_WIDTH - top_button_sx) // 2
         self._button_end_phase = blocks.ButtonRectangle(
             LEFT_BAR_WIDTH + delta_x,
             dy,
             top_button_sx,
             top_button_sy,
-            "End strategy phase",
+            "End strategy phase >>",
             colours.PALETTE_LIGHT_GREEN,
             colours.PALETTE_LIGHT_GREEN,
             # Screen.COLOUR_BORDER,
@@ -864,7 +866,11 @@ class ScreenStrategy(Screen):
             button_font, self._players, events.STRATEGY_PLAYER
         )
         for button, player in zip(self._buttons, self._players):
-            button.add_more_text(Strategies.to_short_string(player.strategy))
+            button.add_more_text(
+                Strategies.to_short_string(player.strategy)
+                + "."
+                + Strategies.to_string(player.strategy)
+            )
         self._touchables.append(self._button_end_phase)
         self._touchables.extend(self._buttons)
         self.update()

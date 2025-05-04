@@ -49,6 +49,8 @@ class Strategies:
 
     @staticmethod
     def to_string(strategy: int):
+        if 0 == strategy:
+            return ""
         return Strategies.DESCRIPTIONS[strategy]
 
     @staticmethod
