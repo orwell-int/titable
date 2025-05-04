@@ -414,11 +414,16 @@ class Rectangle(Visible):
 class ColorfulButton:
     def __init__(
         self,
+        text: str,
+        font: int,
+        cx: int,
+        cy: int,
         fill_colour: Colour,
         border_colour: Colour = colours.WHITE,
         disabled_fill_colour=None,
         disabled_border_colour=None,
     ):
+        self._text = text
         self._fill_colour = fill_colour
         self._border_colour = border_colour
         self._disabled_fill_colour = disabled_fill_colour
@@ -427,6 +432,15 @@ class ColorfulButton:
         self._disabled_text_colour = self._text_colour.build_different()
         self._current_fill_colour = self._fill_colour
         self._current_border_colour = self._border_colour
+        self.decoration_text = DecorationText(
+            self._text,
+            cx,
+            cy,
+            self._text_colour,
+            self._fill_colour,
+            font,
+        )
+        self._more_decoration_texts = []
         self._enabled = True
 
     @property
@@ -539,6 +553,10 @@ class ButtonRectangle(Visible, Touchable, ColorfulButton):
         Touchable.__init__(self)
         ColorfulButton.__init__(
             self,
+            text,
+            font,
+            x + dx // 2,
+            y + dy // 2,
             fill_colour,
             border_colour,
             disabled_fill_colour,
@@ -549,19 +567,9 @@ class ButtonRectangle(Visible, Touchable, ColorfulButton):
         self.dx = dx
         self.dy = dy
         # self.decoration = decoration
-        self._text = text
         # self.align_decoration_h = align_decoration_h
         # self.align_decoration_v = align_decoration_v
-        self.decoration_text = DecorationText(
-            self._text,
-            x + dx // 2,
-            y + dy // 2,
-            self._text_colour,
-            self._fill_colour,
-            font,
-        )
         self._highlighted = False
-        self._more_decoration_texts = []
         self._inset = inset
 
     @property
@@ -742,6 +750,10 @@ class ButtonCircle(Visible, Touchable, ColorfulButton):
         Touchable.__init__(self)
         ColorfulButton.__init__(
             self,
+            text,
+            font,
+            cx,
+            cy,
             fill_colour,
             border_colour,
             disabled_fill_colour,
@@ -752,17 +764,8 @@ class ButtonCircle(Visible, Touchable, ColorfulButton):
         self.radius = radius
         self._r2 = radius * radius
         # self.decoration = decoration
-        self._text = text
         # self.align_decoration_h = align_decoration_h
         # self.align_decoration_v = align_decoration_v
-        self.decoration_text = DecorationText(
-            self._text,
-            cx,
-            cy,
-            self._text_colour,
-            self._fill_colour,
-            font,
-        )
         self._highlighted = False
 
     @property
