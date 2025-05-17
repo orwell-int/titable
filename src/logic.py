@@ -8,7 +8,7 @@ import events
 
 
 USE_UNICODE = False
-SKIP_STATUS_PHASE = True
+SKIP_STATUS_PHASE = False
 
 
 class Strategies:
@@ -224,7 +224,7 @@ class Game:
                 print("Restored player:", player)
                 if not player.hidden:
                     self._active_players += 1
-            if Game.PHASE_ACTION == self._phase:
+            if self._phase in (Game.PHASE_ACTION, Game.PHASE_STATUS):
                 self._ordered_players = self.order_players()
             self.stop_playing()  # we are back to the Welcome menu
 
@@ -331,7 +331,7 @@ class Game:
         print(f"Phase: {self._phase}")
         if skip_players:
             return
-        if Game.PHASE_ACTION == self._phase:
+        if self._phase in (Game.PHASE_ACTION, Game.PHASE_STATUS):
             self._ordered_players = self.order_players()
         players_to_write = set()
         if self._player_index_passed is not None:
@@ -402,7 +402,7 @@ class Game:
 
     def get_player(self, num: int):
         index = (num - 1) % self._num_players
-        if Game.PHASE_ACTION == self._phase:
+        if self._phase in (Game.PHASE_ACTION, Game.PHASE_STATUS):
             return self._ordered_players[index]
         else:
             return self._players[index]
@@ -533,10 +533,13 @@ class Game:
         pass
 
     def _start_phase_status(self):
+        self._phase = Game.PHASE_STATUS
         self._iteration = 0
         self._current_player = 1
         self._next_player = 2
         self._previous_player = None
+        for player in self._players:
+            player.unhide()
 
     def _end_phase_status(self):
         self._iteration = 0
@@ -544,13 +547,11 @@ class Game:
     def _start_phase_agenda(self):
         self._phase = Game.PHASE_AGENDA
         self._iteration = 0
-        self._ordered_players = []
-        for player in self._players:
-            player.unhide()
+        # self._ordered_players = []
         self._turn = 0
 
     def _end_phase_agenda(self):
-        pass
+        self._next_round()
 
     def order_players(self):
         return sorted(self._players, key=lambda x: x.strategy * 10 + x.num)
@@ -631,33 +632,29 @@ class Game:
             self._hide_player()
             if self.players_have_passed:
                 self._end_phase_action()
-                self._start_phase_agenda()
+                # skip status phase for now
+                if SKIP_STATUS_PHASE:
+                    self._start_phase_agenda()
+                else:
+                    self._start_phase_status()
             else:
                 self._current_player = self._next_player
                 self._compute_next_player()
                 # print("ordered players:")
                 # print(" - " + "\n - ".join([str(p) for p in self._ordered_players]))
                 self.print_player_nums("next ++action")
-        elif Game.PHASE_AGENDA == self._phase:
-            self._end_phase_agenda()
-            # skip status phase for now
-            if SKIP_STATUS_PHASE:
-                self._start_phase_strategy()
-                # self._phase = Game.PHASE_STRATEGY
-                self._next_round()
-            else:
-                self._phase = Game.PHASE_STATUS
-                self._start_phase_status()
         elif Game.PHASE_STATUS == self._phase:
             if self._next_player is None:
                 self._end_phase_status()
-                self._phase = Game.PHASE_STRATEGY
-                self._next_round()
+                self._start_phase_agenda()
             else:
                 self._previous_player = self._current_player
                 self._current_player = self._next_player
                 self._compute_next_player()
                 self.print_player_nums("next ++status")
+        elif Game.PHASE_AGENDA == self._phase:
+            self._end_phase_agenda()
+            self._start_phase_strategy()
         print("Phase updated:", self._phase)
         self.write()
         # remember for next iteration which player has passed
@@ -744,14 +741,10 @@ class Game:
 
     @property
     def next_player(self):
-        if Game.PHASE_ACTION == self._phase:
+        if self._phase in (Game.PHASE_ACTION, Game.PHASE_STATUS):
             if self._next_player is None:
                 return None
             return self._ordered_players[self._next_player - 1]
-        elif Game.PHASE_STATUS == self._phase:
-            if self._next_player is None:
-                return None
-            return self._players[self._next_player - 1]
         else:
             if self._next_player is None:
                 return None

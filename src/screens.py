@@ -1300,7 +1300,7 @@ class ScreenAction(Screen):
 
     def _toggle_next_text(self, end_phase):
         if end_phase:
-            self._button_next.text = "Agenda"
+            self._button_next.text = "Status"
             self._button_next.set_more_text(0, "phase")
             self._button_next.fill_colour = colours.PALETTE_LIGHT_BLUE
         else:
@@ -1361,7 +1361,7 @@ class ScreenAgenda(Screen):
         )
         player_button_sx = int(x_ratio_player_button * (INNER_X + 1))
 
-        text_previous = "Action"
+        text_previous = "Status"
         self._button_previous = blocks.ButtonRectangle(
             LEFT_BAR_WIDTH,
             TITLE_HEIGHT,
@@ -1374,10 +1374,10 @@ class ScreenAgenda(Screen):
             inset=2,
         )
         self._button_previous.action = DelaySendEvent(events.PREVIOUS)
-        self._button_previous.args = {"phase": logic.Game.PHASE_ACTION}
+        self._button_previous.args = {"phase": logic.Game.PHASE_STATUS}
         self._button_previous.add_more_text("phase")
 
-        text_next = "Status"
+        text_next = "Next"
         self._button_next = blocks.ButtonRectangle(
             MAX_X - player_button_sx,
             TITLE_HEIGHT,
@@ -1390,7 +1390,7 @@ class ScreenAgenda(Screen):
             inset=2,
         )
         self._button_next.action = DelaySendEvent(events.NEXT)
-        self._button_next.add_more_text("phase")
+        self._button_next.add_more_text("round")
 
         y_offset = 30
         self._description = blocks.Rectangle(
@@ -1473,7 +1473,7 @@ class ScreenStatus(Screen):
             text_previous = "previous"
         else:
             colour = colours.PALETTE_LIGHT_GREEN
-            text_previous = "agenda"
+            text_previous = "Action"
         self._button_previous = blocks.ButtonRectangle(
             LEFT_BAR_WIDTH,
             TITLE_HEIGHT,
@@ -1488,14 +1488,19 @@ class ScreenStatus(Screen):
         self._button_previous.action = DelaySendEvent(events.PREVIOUS)
         if player_previous:
             self._button_previous.add_more_text(player_previous.name)
+            self._button_previous.args = {"phase": logic.Game.PHASE_STATUS}
         else:
             self._button_previous.add_more_text("phase")
+            self._button_previous.args = {"phase": logic.Game.PHASE_ACTION}
 
-        text_next = "next"
+        if player_next:
+            text_next = "next"
+        else:
+            text_next = "Agenda"
         if player_next:
             colour = player_next.colour
         else:
-            colour = colours.PALETTE_LIGHT_GREEN
+            colour = colours.PALETTE_LIGHT_BLUE
         self._button_next = blocks.ButtonRectangle(
             MAX_X - player_button_sx,
             TITLE_HEIGHT,
@@ -1511,7 +1516,7 @@ class ScreenStatus(Screen):
         if player_next:
             self._button_next.add_more_text(player_next.name)
         else:
-            self._button_next.add_more_text("round")
+            self._button_next.add_more_text("phase")
 
         y_offset = 30
         self._description = blocks.Rectangle(

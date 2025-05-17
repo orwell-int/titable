@@ -183,6 +183,9 @@ class Titable:
         elif logic.Game.PHASE_ACTION == phase:
             self._game.previous()
             self.switch_to_screen_action()
+        elif logic.Game.PHASE_STATUS == phase:
+            self._game.previous()
+            self.switch_to_screen_status()
         else:
             print(f"Phase not handled {phase}")
 
